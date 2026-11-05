@@ -1,0 +1,18 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit|Bash|PowerShell|mcp__obsidian__vault_.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": ["-I", "<absolute path to guard.py, for example C:/Users/you/.claude/hooks/guard.py>"],
+            "timeout": 10,
+            "statusMessage": "guard"
+          }
+        ]
+      }
+    ]
+  }
+}

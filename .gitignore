@@ -1,0 +1,5 @@
+# local grants and settings never belong in the repository
+*.local.json
+.env
+__pycache__/
+*.pyc
