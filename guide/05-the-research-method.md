@@ -110,21 +110,35 @@ workable:
 
 ## Which model for which work
 
-Choose by kind of work first, then by effort, and raise the effort before you change the model.
+Route by the kind of work first, and only then by effort. Raise the effort before you change the
+model.
 
-In November 2026 the author routes like this: Opus 5.5 for execution, code, design and anything
-visual, at high effort by default and at the highest effort when the task is hard; Fable 5.1 at the
-highest effort for deep scientific work, meaning synthesis across many papers, method design and
-interpreting results against the literature. The reasons are the published benchmarks at each
-model's release and the author's experience, and both age. Re-check when a new model ships, before
-changing an agent's settings. Two rules outlast any table: nothing that matters runs at low effort,
-because a weak pass costs a redo; and a judgement on a figure or a page comes from the model that
-sees best, even when the task looks small.
+In November 2026 the author routes three kinds of work:
+
+- **Deep scientific work** (synthesis across many papers, method design, interpreting results
+  against the literature) goes to the research lane: Fable 5.1 at the highest effort.
+- **Visual work** goes to Opus 5.5: user interfaces, figures, images and video, and any judgement on
+  something rendered, such as a screenshot, a drawing or a page. This holds even when the task looks
+  small, and even when it sits inside a research task, because a verdict on a figure is only as good
+  as the eye that gave it.
+- **Everything else** (code, data, writing, design, mechanical edits) goes to Opus 5.5 at high
+  effort, and at the highest effort when the task is hard.
+
+There is no Sonnet or Haiku lane in this setup, by design. The smaller models are faster and use
+less of a plan's allowance, but here quality comes first: a slightly wrong note or analysis costs a
+review cycle and is read for months, so the cheaper pass is not cheaper. For the same reason nothing
+that matters runs at low effort.
+
+The reasons for the split are the published benchmarks at each model's release and the author's
+experience, and both age. Re-check when a new model ships, before changing an agent's settings.
+
+Here the session that hands out a task makes the routing call. A decision model such as Jev can make
+that call automatically; it is the more advanced option, and not part of this kit yet.
 
 The three executor agents in `kit/agents/` carry this routing: `exec-standard` and `exec-hard` for
-everything that is not deep research, `exec-research` for what is. Each says what it may write, that
-it runs no git command unless told, and that it stops and reports when the task is bigger than its
-brief.
+everything that is not deep research, visual work included, and `exec-research` for what is. Each
+says what it may write, that it runs no git command unless told, and that it stops and reports when
+the task is bigger than its brief.
 
 ## Terms used
 
