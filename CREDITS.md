@@ -77,9 +77,9 @@ is the only ask." Copyright (c) 2025 Xule Lin, MIT License. Its requested attrib
   Agent-Reach, Claude in Chrome, and the Obsidian plugins Local REST API, Dataview, Templater and
   Relay (guide 03). Each is its makers' work under its own licence; the kit describes only how they
   fit together.
-- **The six design shifts** of guide 02: from a summary of an Anthropic note on smaller system prompts
-  for newer models, which circulated in November 2026 and whose original could not be located; the
-  one quotation in the guide is from The Decoder, 2 July 2026.
+- **The six design shifts** of guide 02: Anthropic's own, from its post on Claude's official Instagram
+  account on the smaller system prompt for more capable models (November 2026); the engineer's
+  quotation in the guide is from The Decoder, 2 July 2026.
 - **The eight layers** of guide 03: the layer names follow a practitioner article on building a skill
   library, summarised to the author in November 2026 and not located since; the mapping onto Claude
   Code is the author's.

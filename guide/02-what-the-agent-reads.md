@@ -60,11 +60,12 @@ work, was the largest share of the cost. `kit/tools/measure_context.md` shows ho
 
 ## The design rule: six shifts
 
-Anthropic has said that it cut most of Claude Code's own system prompt for its newer models,
-because, in the words of an Anthropic engineer, "this new class of models want a smaller system
-prompt" (quoted by The Decoder, 2 July 2026). A summary that circulated in November 2026 drew six
-consequences for anyone who writes instructions for an agent. The original text behind that summary
-could not be found, so read the six as the design rule this kit adopts, not as Anthropic's words.
+Anthropic removed over 80 percent of Claude Code's own system prompt for its more capable models
+and measured no loss: "the context that kept earlier models on track now overconstrains more capable
+ones" (Anthropic, on Claude's official Instagram account, November 2026). An Anthropic engineer had
+put it the same way in July: "this new class of models want a smaller system prompt" (quoted by The
+Decoder, 2 July 2026). Anthropic drew six consequences for anyone who writes instructions for an
+agent; this kit adopts them as its design rule.
 
 1. **Judgement over hard rules.** Write the reason with the rule, in one clause. A capable model
    applies a reason to the case the rule did not foresee; it applies a bare prohibition rigidly or
