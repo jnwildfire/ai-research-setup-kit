@@ -94,8 +94,10 @@ The guard hook enforces the originals and the write scope; this file only says w
 ### Night shifts
 
 - **Unattended, only what is reversible and recorded**: a commit after every unit, a morning
-  report with the minimum questions and a recommendation each. Never an account, an install, a
-  payment or a change to these rules while I am away.
+  report with the minimum questions and a recommendation each. <What may run while I am away in
+  my work, for example tests, builds, pipelines on copies of the data, drafts.> Never while I am
+  away: <my own list. Kevin Smith's is a simulation, an account, an install, a rule; this template
+  adds a payment. Keep what fits, add what my work needs (guide 04).>
 
 ---
 

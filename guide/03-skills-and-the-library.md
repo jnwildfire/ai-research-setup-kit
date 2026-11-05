@@ -7,13 +7,21 @@ moment you have twenty.*
 
 ## What a skill is
 
-A **skill** is a folder with a file named `SKILL.md` in it. The file starts with a short header:
-the skill's name and a **description** of one or two sentences. Below the header is the **body**:
-the procedure, in numbered steps. The folder may also hold scripts and example files.
+**The idea, in any agent.** A procedure you repeat is written down once, in its own folder: a
+short description that the agent always sees, and a body it reads only when the task comes up.
+The description says when; the body says how. Scripts and example files sit beside it.
 
+**In Claude Code**, a **skill** is a folder with a file named `SKILL.md` in it. The file starts with
+a short header: the skill's name and a **description** of one or two sentences. Below the header is
+the **body**: the procedure, in numbered steps. The folder may also hold scripts and example files.
 Claude Code finds skills in two places: your personal skills in `~/.claude/skills/<name>/`, which
 every project on the computer sees, and a project's skills in `.claude/skills/<name>/` inside that
 project, which only sessions started there see.
+
+**In other agents.** Codex CLI, OpenAI's command-line interface (CLI) agent, uses the same shape: a folder with a `SKILL.md` that declares a
+`name` and a `description`, found in `.agents/skills` inside a repository and in
+`$HOME/.agents/skills` for the person. The body of a skill is plain text and carries over; the
+folders and the header settings differ, so check them in your agent's documentation.
 
 ## How a skill loads
 
@@ -36,6 +44,11 @@ Two settings in the header change this:
   should never run by surprise.
 - `user-invocable: false`: the reverse; only the model can call it, and it is hidden from the `/`
   menu. Right for background procedures you never type.
+
+Codex CLI loads skills the same way, name and description first and the body on use. There you
+call a skill by mentioning it with `$name` or from `/skills`, and `allow_implicit_invocation: false`
+in the skill's `agents/openai.yaml` makes it run only when called, the counterpart of
+`disable-model-invocation`.
 
 ## The eight layers
 
@@ -104,7 +117,8 @@ skill:
 
 So a project that never writes talks switches the talk skill `off`; a project of TypeScript code
 switches off the skills for writing papers. Nothing is switched on by hand before a task: what is on
-fires on its own.
+fires on its own. (Codex CLI switches a skill off with a `[[skills.config]]` entry and
+`enabled = false` in `~/.codex/config.toml`.)
 
 For skills that should stay available but rarely fire, `name-only` keeps only the name on the desk,
 and the `skill-library` skill holds their one-line purpose. The model reads the library's page when
@@ -132,6 +146,37 @@ procedure, one example file, a script for anything mechanical, a Checks section.
 library in the same change. Kevin's rule holds here too: a structure is made when its third instance
 would be written, not before.
 
+## Optional add-ons
+
+The author's setup also uses a few things from outside the kit. None is needed; each adds something
+specific, and two of them act as you, which is why they are gated.
+
+- **ponytail**, a Claude Code plugin (`/plugin marketplace add DietrichGebert/ponytail`, then
+  `/plugin install ponytail@ponytail`): a "lazy senior dev" set of skills for code, the smallest
+  change that solves the task and reviews that ask whether every line is needed. It adds skills,
+  not permissions; switch it off in projects that hold no code.
+- **Agent-Reach**, an open-source command-line tool that reads what an ordinary fetch cannot:
+  pages behind a login or a bot block, video subtitles. Gated: the agent asks first, every time, naming the page, what the
+  ordinary route returned and the command it would run, and the permission covers that one use.
+  The reason is the pattern for any such tool: it acts on your logged-in sessions and stored
+  cookies, and sends the addresses it reads through third-party services.
+- **Claude in Chrome**, Anthropic's browser extension (`claude --chrome`, or `/chrome` in a
+  session): the agent works in your own Chrome, with your sign-ins, for pages behind a login, forms
+  and screenshots. It asks before acting on a site, and the extension's site permissions decide.
+  Treat it like Agent-Reach, because it acts as you.
+- **Obsidian plugins** the vault side rests on:
+  - **Local REST API**: the connector the agent writes notes through, an application programming
+    interface (API) served by Obsidian while it runs and opened with a key you keep in an
+    environment variable. Writing through the app rather
+    than to the file avoids a race with a note you have open.
+  - **Dataview**: queries over the notes' properties, for example every note with
+    `reviewed: false`.
+  - **Templater**: templates with small scripts, including startup scripts such as the one that
+    archives agent outputs (guide 08).
+  - **Relay**: folders shared in real time with colleagues. The agent edits there one passage at a
+    time, never a whole note, because its writes do not travel through Relay's own sync and a full
+    rewrite can overwrite what a co-author typed meanwhile.
+
 ## Terms used
 
 - **Skill**: a folder with a `SKILL.md`: a description always on the desk, a body loaded when used.
@@ -141,3 +186,5 @@ would be written, not before.
 - **Library**: all installed skills, indexed by the `skill-library` skill.
 - **`skillOverrides`**: the project setting that switches each skill on, off, or to name only.
 - **Trigger test**: a prompt in a fresh session that checks whether a skill fires when it should.
+- **Plugin**: a package of skills, agents or hooks that Claude Code installs from a marketplace,
+  a repository that lists plugins.

@@ -5,7 +5,7 @@ artificial intelligence (AI) agent to work across all of it under rules they set
 checks before anything leaves. You need to know what a terminal is; you do not need to program.
 The agent sets the kit up with you and explains each step before it takes it.*
 
-Johannes Wildfeuer, Technical University of Denmark (DTU), November 2026 (jniwi@dtu.dk). Draft v0.1, not yet released.
+Johannes Wildfeuer, Technical University of Denmark (DTU), November 2026 (jniwi@dtu.dk). Draft v0.1.1, not yet released.
 
 ## The first track, and this one
 
@@ -29,33 +29,60 @@ repositories, a shared data drive and a notes vault, and who wants one setup acr
 3. **A skill library**: skills in eight layers, loaded only when needed, switched per project, with a
    router and a worked example, the dictation dictionary ([guide 03](guide/03-skills-and-the-library.md)).
 4. **A guard with a write scope**: originals refused, writes outside the roots asked, grants written
-   into the plan of a job that runs while you are away, and a night-shift rule with a morning report
+   into the plan of a job that runs while you are away, a night-shift list of your own with a
+   morning report, and a computer that stays awake and pauses its job before the battery runs out
    ([guide 04](guide/04-guards-and-night-shifts.md)).
 5. **What research adds to the method**: the paper itself before a claim carries weight, a basis on
    every number, the agent as referee, faults made into rules, decisions as tickets, one base for
    several people, which model for which work ([guide 05](guide/05-the-research-method.md)).
 6. **The research-data case**: household and partner data, a vault on the institution's drive, and
    what never goes into a public repository ([guide 06](guide/06-data-and-the-rules.md)).
+7. **Literature and the agent**: a reference manager with stable citation keys, one literature note
+   per paper, a connector that reads full text, and the services that check a citation
+   ([guide 07](guide/07-literature-and-the-agent.md)).
+8. **The knowledge base**: the vault laid out in lanes, the author's as one example, Research Memex
+   as a place to start, and an archive for the agent's outputs that runs itself
+   ([guide 08](guide/08-the-knowledge-base.md)).
+
+## The ideas, and their form in your agent
+
+The kit is written for Claude Code, because the first track installs it. The ideas are not tied to
+it. Each guide states the idea first, then its form in Claude Code, then the equivalent in one other
+agent, Codex CLI (OpenAI's command-line interface, CLI, agent), as its documentation described it
+in November 2026. For
+any other agent, check its documentation; this table is a map, not a promise.
+
+| Idea | In Claude Code | In Codex CLI |
+|---|---|---|
+| A **rules file** the agent reads at the start of every session | `CLAUDE.md` in your user folder and in the project | `AGENTS.md` in `~/.codex` and from the project root down to the current folder (32 KiB by default) |
+| **Skills**: procedures loaded only when a task needs them | folders with a `SKILL.md` in `~/.claude/skills/` and `.claude/skills/` | folders with a `SKILL.md` in `$HOME/.agents/skills` and `.agents/skills` |
+| **Hooks**: scripts that run before an action, whatever the agent decides | `PreToolUse` hooks in `settings.json`; exit code 2 refuses | `PreToolUse` hooks in `hooks.json` or `config.toml`; exit code 2 or a "deny" answer refuses |
+| **Memory**: the agent's own notes on where things stand | automatic, per project, with a `MEMORY.md` index | "memories" under `~/.codex`, off by default |
+| **Connectors** to services (Model Context Protocol, MCP, servers) | `claude mcp add` | `[mcp_servers.<name>]` in `config.toml`, or `codex mcp add` |
+| **Three roots** and **the desk** | not tied to the agent | not tied to the agent |
 
 ## What is in the kit
 
 | Part | What it is |
 |---|---|
 | [START-HERE.md](START-HERE.md) | The instructions the agent follows to set you up. You may read them; you do not need to. |
-| [guide/](guide/) | Six guides, ten to twenty minutes each, in the order above. |
+| [guide/](guide/) | Eight guides, ten to twenty minutes each, in the order above. |
 | [kit/CLAUDE.md.template](kit/CLAUDE.md.template) | A rules file of about 130 lines: three roots, standing behaviour as principles with their reasons, a routing table, the maintenance rule. |
 | [kit/skills/skill-library/](kit/skills/skill-library/SKILL.md) | The router: an index of every installed skill, one line each. |
 | [kit/skills/learn/](kit/skills/learn/SKILL.md) | Routes each of your corrections to the place that owns it (a hook, a skill, the rules file, memory) instead of growing the rules file. |
 | [kit/skills/dictionary/](kit/skills/dictionary/SKILL.md) | A dictation dictionary in one note, exported to Wispr Flow and to term lists. The worked example of a skill in eight layers. |
-| [kit/hooks/](kit/hooks/README.md) | `guard.py`, the guard on originals and on the write scope, with a self-test, and the settings to register it. |
+| [kit/skills/keep-awake/](kit/skills/keep-awake/README.md) | Keeps the computer awake through a long job, also with the lid closed, and pauses the job on battery at 20 %. Windows script, macOS note. |
+| [kit/hooks/](kit/hooks/README.md) | `guard.py`, the guard on originals, on the write scope and on the battery pause, with a self-test, and the settings to register it. |
 | [kit/agents/](kit/agents/) | Three executor agents, routed by kind of work: standard, hard, and deep research. |
 | [kit/templates/](kit/templates/) | A meeting note with a decisions table, a literature card with a `read:` field, a daily note, a one-screen handover note. |
 | [kit/tools/measure_context.md](kit/tools/measure_context.md) | How to read `/context` and what to cut. |
+| [kit/tools/literature-stack.md](kit/tools/literature-stack.md) | The literature tools of guide 07, in the order to install them, with a test for each. |
 | [overview/](overview/README.md) | The graphical overview of the whole setup: step two, not yet made. |
 | [CREDITS.md](CREDITS.md), [LICENSE.md](LICENSE.md), [CHANGELOG.md](CHANGELOG.md) | Who and what this builds on, the licences, the versions. |
 
-The kit's two Python scripts, `guard.py` and `export_dictionary.py`, use the standard library only.
-The agent runs them for you.
+The kit's two Python scripts, `guard.py` and `export_dictionary.py`, use the standard library only;
+the keep-awake script uses PowerShell, which every Windows computer has. The agent runs them for
+you.
 
 ## How to start
 
@@ -70,18 +97,33 @@ The agent runs them for you.
    skills and the guard, and ends with a test in which the guard refuses to change an original. About
    an hour, in two sessions.
 5. **Read guide 02 and guide 05** in the first week. Read guide 04 before the first job that runs
-   while you are away.
+   while you are away, and guides 07 and 08 when you set up your literature and your vault.
+
+## Optional add-ons
+
+Not part of the kit, and none is needed. Guide 03 says more about each.
+
+- **ponytail**, a Claude Code plugin from the marketplace `DietrichGebert/ponytail`: "lazy senior
+  dev" code style and review, the smallest change that solves the task. Adds skills, not
+  permissions.
+- **Agent-Reach**, a command-line tool for pages behind a login or a bot block. Gated: ask first,
+  every time, because it acts on your logged-in sessions and sends addresses through third parties.
+- **Claude in Chrome**, Anthropic's browser extension: the agent works in your own browser, with
+  your sign-ins. Gated by its per-site permissions, and treated like Agent-Reach.
+- **Obsidian plugins** the vault side rests on: Local REST API (the connector the agent writes notes
+  through), Dataview (queries over note properties), Templater (templates and startup scripts) and
+  Relay (folders shared in real time, which the agent edits one passage at a time).
 
 ## What is left out on purpose
 
 Nothing of the author's projects is in the kit: no data, no notes, no names of partners or sites.
 The cases in the guides are anonymised. The kit holds the method and the mechanisms, not the content.
-It is also deliberately small: three skills, one hook, three agents, four templates. Add what your
+It is also deliberately small: four skills, one hook, three agents, four templates. Add what your
 own work needs when you need it; the `learn` skill and guide 03 say where.
 
 ## Credits and licence
 
-Built on Kevin Michael Smith's starter kit (structure, register, and the guard it derives from); see
-[CREDITS.md](CREDITS.md). Texts under CC BY 4.0, scripts under MIT ([LICENSE.md](LICENSE.md)), the
-same two licences as the first track, so the two kits can be combined. Made in conversation with
-Claude Code.
+Built on Kevin Michael Smith's starter kit (structure, register, and the guard it derives from), and
+on Xule Lin's Research Memex for the vault's first structure; see [CREDITS.md](CREDITS.md). Texts
+under CC BY 4.0, scripts under MIT ([LICENSE.md](LICENSE.md)), the same two licences as the first
+track, so the two kits can be combined. Made in conversation with Claude Code.

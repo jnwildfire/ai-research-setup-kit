@@ -5,8 +5,8 @@ Copyright (c) 2026 Johannes Wildfeuer
 The kit has two licences, one for its texts and one for its programs, the same two as Kevin Smith's
 starter kit, so that the two can be combined.
 
-- **The Python scripts** (the files whose names end in `.py`) are under the MIT licence, given in
-  full below. `kit/hooks/guard.py` derives from `guard_raw.py` in Kevin Michael Smith's
+- **The scripts** (the files whose names end in `.py` or `.ps1`) are under the MIT licence, given
+  in full below. `kit/hooks/guard.py` derives from `guard_raw.py` in Kevin Michael Smith's
   ai-research-starter-kit, Copyright (c) 2026 Kevin Michael Smith, also under the MIT licence; his
   notice is kept in the script's header and in [CREDITS.md](CREDITS.md).
 - **Everything else** (the guides, the templates, the rules file template, the skills' instructions,

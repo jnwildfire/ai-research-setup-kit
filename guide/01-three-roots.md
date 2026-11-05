@@ -78,6 +78,13 @@ file search from the root) opens every file, so it downloads the whole drive and
 The agent should go to the path it knows, or list one folder. Put this into your rules file; the
 template has it.
 
+## Inside the vault
+
+The knowledge root is laid out in lanes, one kind of note each: an inbox, literature notes,
+meeting notes, daily notes, the agent's own outputs and a few more. Guide 08 describes them, with
+the author's vault as one example, Research Memex as a place to start, and an archive for the
+agent's outputs that runs itself.
+
 ## What the agent can reach
 
 The agent works with your permissions, so it can open anything on the three roots and anything else

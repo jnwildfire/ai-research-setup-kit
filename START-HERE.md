@@ -17,6 +17,12 @@ shows what it wants to do and asks you to allow it; allow it when it matches wha
 would do. Plan on about an hour, split over two sessions: step 6 needs a fresh one. If you stop,
 note the step you reached and continue later with "continue the set-up in START-HERE.md from step N".
 
+The steps are written for Claude Code. The ideas behind them (a rules file read at the start,
+skills loaded when needed, a hook that runs whatever the agent decides, three roots) work in other
+agents too, and the README's table "The ideas, and their form in your agent" names the equivalents
+in Codex CLI, OpenAI's command-line interface (CLI) agent. With another agent, tell it which one it is at the start; it then follows its own
+documentation wherever this file names a Claude Code path or setting.
+
 ---
 
 **For the agent.** You are setting up a researcher who already has files, data and perhaps code or
@@ -39,6 +45,9 @@ what they have; it does not move or reorganise anything of theirs. Follow these 
 - **If a step fails**, stop, say in plain words what went wrong and what you propose, and wait.
 - Work out first whether the computer runs Windows or macOS, and use that system's commands. Write
   paths in configuration files with forward slashes.
+- **If you are not Claude Code**, say so before step 3. Map each step to your own equivalents with
+  the README's table, and where your documentation has no equivalent, stop at that step and say
+  so rather than guessing.
 
 ## Step 1. Check the computer
 
@@ -67,16 +76,19 @@ a short table.
 
 ## Step 3. The workspace folder and the rules file
 
-Explain: the agent reads a rules file, `CLAUDE.md`, at the start of every session in its folder. The
-**workspace folder** is where the person starts the agent for research work. It is a git repository
+Explain: an agent reads a rules file at the start of every session in its folder (in Claude Code
+`CLAUDE.md`; in Codex CLI `AGENTS.md`). The **workspace folder** is where the person starts the agent
+for research work. It is a git repository
 that holds the rules file, the project's skills and agents, and nothing else: no data, no notes.
 
 1. Propose `<code root>/research` as the workspace folder, or an existing repository the person
    names. Create it if needed and run `git init`.
 2. Copy `kit/CLAUDE.md.template` to `<workspace>/CLAUDE.md`. Fill in the blanks (marked `<like
    this>`) with the person, from the answers of step 2 and a few more questions: their name and field,
-   their work e-mail address, two or three writing rules they care about, and the language of their
-   notes. Leave a blank they cannot answer yet, and list it at the end of the step.
+   their work e-mail address, two or three writing rules they care about, the language of their
+   notes, and what may and may never run while they are away (guide 04, "Night shifts: your own
+   list"; offer Kevin Smith's list plus a payment as the start). Leave a blank they cannot answer
+   yet, and list it at the end of the step.
 3. Show the filled section "Standing behaviour" and ask what to change or remove. The file must stay
    under 200 lines: report its line count.
 4. Create `<workspace>/.claude/rules-changelog.md` with one line: today's date, "rules file set up
@@ -102,13 +114,16 @@ its one-line description is what is always on the desk.
 ## Step 5. The guard
 
 Explain guide 04 in four sentences: a hook is a script Claude Code runs before each action of the
-agent; this one refuses any change to an original, asks before any write outside the three roots,
-and stays silent otherwise; it cannot be forgotten the way a sentence in the rules file can.
+agent (other agents have their own, with their own format); this one refuses any change to an
+original, asks before any write outside the three roots, and stays silent otherwise; it cannot be
+forgotten the way a sentence in the rules file can.
 
 1. Copy `kit/hooks/guard.py` to `~/.claude/hooks/guard.py`.
 2. Fill in its configuration block from step 2: `CODE_ROOT`, `DATA_ROOT`, `NOTES_ROOT`, and the
    `IMMUTABLE` list with one line of reason each. If the person writes notes through an Obsidian
-   connector, leave `NOTE_TOOL_PREFIX` as it is; otherwise set it to `""`.
+   connector, leave `NOTE_TOOL_PREFIX` as it is; otherwise set it to `""`. Leave `UNATTENDED_ASK`,
+   `PAUSE_FLAG` and `CONTINUE_FILE` as they are, and explain them in one sentence each (guide 04:
+   a background job is refused instead of asked; a battery pause from the keep-awake skill).
 3. Run `python -I ~/.claude/hooks/guard.py --show-config` and read the output with the person.
 4. Run `python -I ~/.claude/hooks/guard.py --self-test`. Every check must pass; explain that it ran
    synthetic actions against a temporary folder and touched nothing of theirs.
@@ -128,7 +143,9 @@ the set-up in START-HERE.md from step 6" (the file is in the kit's folder; give 
 2. Use the Edit tool to change that line. The guard must refuse, naming the folder and the reason.
    Tell the person: **this refusal is the right result**; the agent cannot change an original.
 3. Use the Write tool to create a file in the person's Downloads folder. Claude Code must show a
-   permission prompt with the guard's reason. Ask the person to answer no.
+   permission prompt with the guard's reason. Ask the person to answer no. If the guard refuses
+   instead, saying that nobody is at the keyboard, the session reports itself as unattended: run
+   `--show-config` with the person and see guide 04, "Nobody at the keyboard".
 4. Ask the person to delete the `_guard-test` folder themselves, in File Explorer or Finder; the
    agent cannot, by design.
 
@@ -136,15 +153,21 @@ If step 2 changes the file instead of being refused, stop: the guard is not runn
 and the Python name in `~/.claude/settings.json`, run `/hooks` to see whether Claude Code lists it,
 and tell the person that the originals are unprotected until it is fixed.
 
-## Step 7. Templates and the dictionary (optional)
+## Step 7. Templates, the dictionary and keep-awake (optional)
 
-Ask whether the person wants either now; both can wait.
+Ask whether the person wants any of these now; all can wait.
 
 - **Templates**: if they have a vault, copy `kit/templates/*.md` into its template folder (ask which),
   and show the decisions table of the meeting note: blank Verdict means approved.
 - **Dictionary**: copy `kit/skills/dictionary/references/dictation-dictionary.md` into the vault,
   set `NOTE` and `OUT` at the top of the export script (in the workspace copy), and run it with
   `--check`. The output folder belongs in the data root.
+- **Keep-awake**, for a laptop that runs jobs while the person is away: copy `kit/skills/keep-awake`
+  to `~/.claude/skills/` and add its line to the skill library's index. On Windows, run its script
+  with `-Status` and read the output with the person: the power source, the battery and the
+  lid-close action. Explain that `/keep-awake` sets the lid action to "Do nothing" only while a job
+  runs and puts it back afterwards, and that the guard pauses the job on battery at 20 %. On macOS,
+  show them `macOS.md` instead; it is a note, not a tested script.
 
 ## Step 8. Hand over
 

@@ -28,6 +28,9 @@ Two habits make the rule cheap to follow:
   then searches by line. An occasional paper is read through your reference manager's full text or
   a literature service, by a background agent that returns the passage with its page.
 
+Guide 07 sets up the tools behind both habits: the reference manager and its citation keys, the
+literature notes made from it, the agent's connector, and the services that check a citation.
+
 ## Every number carries its basis
 
 Kevin's rule says every claim says what it rests on. Numbers need one more word: what kind of thing

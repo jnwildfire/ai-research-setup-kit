@@ -17,6 +17,16 @@ A grant widens the roots for one job or one session: a small JSON file that the 
 after you approved a plan that names the extra folders (guide 04). A grant never opens an immutable
 folder.
 
+Two situations change the verdicts (guide 04):
+
+    nobody at the keyboard   in a background job (CLAUDE_CODE_SESSION_ATTENDED=0, observed, not
+                             documented) an "ask" becomes a refusal with a note for the morning
+                             report, so the job goes on with other work instead of waiting.
+    battery pause            while the keep-awake skill's battery watch has written its pause flag
+                             (on battery at 20 % or less), every call the guard sees is refused with
+                             "paused: battery at N %, connect power or say continue". Power back, or
+                             the continue file, ends the pause.
+
 What the guard cannot see: a script that writes files itself (`python make_figures.py`) is one
 shell command to the guard, and only the paths written on the command line are checked. Shell
 commands are matched by pattern, not parsed like a shell would. The guard is a net under the rules,
@@ -24,7 +34,7 @@ not a sandbox; Claude Code's permission prompts and, in auto mode, its classifie
 
 Set the configuration block below, then check it:
     python guard.py --show-config     the resolved roots, immutable folders and grants
-    python guard.py --self-test       about fifty synthetic tool calls and checks against a temporary folder tree
+    python guard.py --self-test       about sixty synthetic tool calls and checks against a temporary folder tree
 Test one call by hand (bash); a refusal prints the reason and exits with 2:
     echo '{"tool_name":"Edit","tool_input":{"file_path":"<an original>"}}' | python guard.py; echo "exit $?"
 
@@ -45,6 +55,7 @@ import re
 import shutil
 import sys
 import tempfile
+import time
 from datetime import datetime, timedelta
 
 # ------------------------------------------------------------------------------- configuration
@@ -95,11 +106,27 @@ GRANT_FILES = [
 NOTE_TOOL_PREFIX = "mcp__obsidian__vault_"
 NOTE_TOOL_WRITES = ("write", "patch", "append", "delete", "move", "copy")
 NOTE_PATH_KEYS = ("path", "newPath", "new_path", "destination", "to", "target_path", "targetPath")
+
+# Nobody at the keyboard. Claude Code sets CLAUDE_CODE_SESSION_ATTENDED=0 in background jobs (seen on
+# the author's computer in November 2026; not in the documentation read then). There an "ask" waits
+# for an answer nobody gives. "deny": refuse, and tell the agent to put the question into its morning
+# report. "ask": keep the prompt. Without the variable the guard asks as usual.
+UNATTENDED_ASK = "deny"
+
+# The battery pause of the keep-awake skill (kit/skills/keep-awake). Its battery watch writes the
+# pause flag on battery at 20 % or less and rewrites it every minute; the person lifts the pause by
+# connecting power or by saying "continue", which the agent records as the continue file.
+PAUSE_FLAG = "~/.claude/keep-awake/pause"
+CONTINUE_FILE = "~/.claude/keep-awake/continue"
 # --------------------------------------------------------------------------- end of configuration
 
 NAME = "guard.py"
 FILE_TOOLS = ("Write", "Edit", "MultiEdit", "NotebookEdit")
 SHELL_TOOLS = ("Bash", "PowerShell")
+PAUSE_STALE_SECONDS = 600  # a pause flag not rewritten for ten minutes was left behind by a stopped watch
+UNATTENDED_NOTE = (" Nobody is at the keyboard to answer a prompt (CLAUDE_CODE_SESSION_ATTENDED=0), so the "
+                   "guard refuses instead of letting the job wait: write this down as a question for the "
+                   "morning report, with your recommendation, and go on with what does not depend on it.")
 
 _EDGE_L = r"(?<![\w.\-/\\$:])"
 _EDGE_R = r"(?=\s|$|;)"
@@ -158,9 +185,12 @@ def parts(p):
 # ------------------------------------------------------------------------------- configuration as data
 
 def build_config(code=None, data=None, notes=None, writable=None, immutable=None, grant_files=None,
-                 inside=None, outside=None, note_prefix=None):
+                 inside=None, outside=None, note_prefix=None, attended="env", unattended=None,
+                 pause_flag=None, continue_file=None):
     """Collect the configuration block into one dict; the self-test passes its own values."""
     cwd = os.getcwd()
+    flag = expand(PAUSE_FLAG if pause_flag is None else pause_flag)
+    cont = expand(CONTINUE_FILE if continue_file is None else continue_file)
     cfg = {
         "notes_root": None,
         "writable": [],
@@ -169,6 +199,11 @@ def build_config(code=None, data=None, notes=None, writable=None, immutable=None
         "inside": inside or INSIDE_SCOPE,
         "outside": outside or OUTSIDE_SCOPE,
         "note_prefix": NOTE_TOOL_PREFIX if note_prefix is None else note_prefix,
+        "attended": os.environ.get("CLAUDE_CODE_SESSION_ATTENDED") if attended == "env" else attended,
+        "unattended": unattended or UNATTENDED_ASK,
+        "pause_flag": norm(flag, cwd) if flag else None,
+        "continue_file": norm(cont, cwd) if cont else None,
+        "continue_shown": os.path.normpath(cont) if cont else None,
         "unset": [],
     }
     notes_raw = NOTES_ROOT if notes is None else notes
@@ -245,14 +280,55 @@ def scope(p, cfg):
     if any(within(p, r) for r in cfg["writable"] + cfg["granted"]):
         return cfg["inside"], ""
     return cfg["outside"], (
-        f"`{p}` is outside the folders this setup writes to without asking. Confirm only if you asked "
-        f"for this write. For a job that runs while you are away, the plan names such folders and the "
-        f"session writes a grant before the job starts (guide 04).")
+        f"`{p}` is outside the folders this setup writes to without asking. For a job that runs while "
+        f"you are away, the plan names such folders and the session writes a grant before the job "
+        f"starts (guide 04).")
+
+
+def writes_continue_file(tool, ti, cwd, cfg):
+    """True for a file write to the continue file: recording that the person said continue."""
+    target = ti.get("file_path") if tool in FILE_TOOLS else ""
+    return bool(cfg["continue_file"] and target and norm(target, cwd) == cfg["continue_file"])
+
+
+def pause_reason(cfg):
+    """The refusal text while the battery pause holds; None when there is no pause."""
+    flag, cont = cfg["pause_flag"], cfg["continue_file"]
+    if not flag or not os.path.isfile(flag) or (cont and os.path.exists(cont)):
+        return None
+    shown = cfg["continue_shown"]
+    try:
+        if time.time() - os.path.getmtime(flag) > PAUSE_STALE_SECONDS:
+            return None
+        with open(flag, encoding="utf-8-sig", errors="replace") as fh:
+            percent = (fh.read().split() or ["?"])[0]
+    except OSError:
+        return None
+    return (f"paused: battery at {percent} %, connect power or say continue. The guard ({NAME}) refuses "
+            f"every action while the battery is this low, so that the job stops before the computer does. "
+            f"Stop here and tell the person. If they say continue, create the empty file `{shown}` with the "
+            f"Write tool: that is the one action allowed while paused, and it ends the pause. Connecting "
+            f"power ends it by itself within a minute.")
 
 
 def decide(tool, ti, cwd, cfg):
-    """Return (verdict, reason) with verdict one of deny, ask, allow, pass."""
+    """Return (verdict, reason) with verdict one of pause, deny, ask, allow, pass."""
     cwd = norm(cwd or os.getcwd(), os.getcwd())
+    if writes_continue_file(tool, ti, cwd, cfg):
+        return "pass", ""  # never refused and never asked, so a paused job can be resumed
+    why = pause_reason(cfg)
+    if why:
+        return "pause", why
+    verdict, reason = decide_call(tool, ti, cwd, cfg)
+    if verdict == "ask":
+        if cfg["attended"] == "0" and cfg["unattended"] == "deny":
+            return "deny", reason + UNATTENDED_NOTE
+        return "ask", reason + " Confirm only if you asked for this write."
+    return verdict, reason
+
+
+def decide_call(tool, ti, cwd, cfg):
+    """The verdict on one call from the roots, the originals and the grants."""
     if tool in FILE_TOOLS:
         raw = ti.get("file_path") or ti.get("notebook_path") or ""
         if not raw:
@@ -386,6 +462,9 @@ def run_hook(stdin_text, cfg, out, err):
         return 0
     verdict, reason = decide(data.get("tool_name", "") or "", data.get("tool_input", {}) or {},
                              data.get("cwd") or os.getcwd(), cfg)
+    if verdict == "pause":
+        err.write(reason)
+        return 2
     if verdict == "deny":
         err.write(f"Refused by the guard ({NAME}): {reason}")
         return 2
@@ -418,6 +497,12 @@ def show_config():
         print(f"  -> {n}")
     print(f"Notes connector prefix: {cfg['note_prefix'] or '(none)'}; notes root: {cfg['notes_root']}")
     print(f"Inside the roots: {cfg['inside']}; outside: {cfg['outside']}")
+    att = cfg["attended"]
+    print(f"Someone at the keyboard: {'no' if att == '0' else 'yes' if att else 'not said (variable absent)'}"
+          f"; an ask without anyone there becomes: {cfg['unattended']}")
+    print(f"Battery pause flag: {cfg['pause_flag']}"
+          f"{'   (PRESENT)' if cfg['pause_flag'] and os.path.isfile(cfg['pause_flag']) else ''}")
+    print(f"Continue file: {cfg['continue_file']}")
     return 1 if cfg["unset"] else 0
 
 
@@ -447,15 +532,32 @@ def _self_test(base):
     with open(j("oldjob", "write-scope.json"), "w", encoding="utf-8") as fh:
         json.dump({"plan": "self-test", "expires": "2000-01-01T00:00", "write": [j("outside", "expired")]}, fh)
 
+    # battery pause: a fresh flag; a flag with its continue file; a flag left behind an hour ago
+    for d in ("power", "power-continued", "power-stale"):
+        os.makedirs(j(d), exist_ok=True)
+        with open(j(d, "pause"), "w", encoding="utf-8") as fh:
+            fh.write("18\n")
+    with open(j("power-continued", "continue"), "w", encoding="utf-8") as fh:
+        fh.write("")
+    hour_ago = time.time() - 3600
+    os.utime(j("power-stale", "pause"), (hour_ago, hour_ago))
+
     kw = dict(code=j("code"), data=j("data"), notes=j("notes"),
               writable=[j("code"), j("data"), j("notes"), j("work")],
               immutable=[(j("data", "projects", "*", "data", "raw"), "deposit-only", "raw data is never changed"),
                          (j("data", "meeting-transcripts"), "deposit-only", "transcripts are kept as recorded"),
                          (j("notes", "originals"), "never", "the originals of the notes")],
               grant_files=[j("job", "write-scope.json"), j("oldjob", "write-scope.json")],
-              note_prefix="mcp__obsidian__vault_")
-    cfg = build_config(**kw)
-    cfg_allow = build_config(inside="allow", **kw)
+              note_prefix="mcp__obsidian__vault_", unattended="deny",
+              continue_file=j("power", "continue"))  # the session's own environment never decides
+    cfg = build_config(attended=None, pause_flag=j("nopause"), **kw)
+    cfg_allow = build_config(inside="allow", attended=None, pause_flag=j("nopause"), **kw)
+    cfg_away = build_config(attended="0", pause_flag=j("nopause"), **kw)
+    cfg_here = build_config(attended="1", pause_flag=j("nopause"), **kw)
+    cfg_low = build_config(attended=None, pause_flag=j("power", "pause"), **kw)
+    kw["continue_file"] = j("power-continued", "continue")
+    cfg_cont = build_config(attended=None, pause_flag=j("power-continued", "pause"), **kw)
+    cfg_stale = build_config(attended=None, pause_flag=j("power-stale", "pause"), **kw)
 
     raw = j("data", "projects", "p1", "data", "raw")
     orig = os.path.join(raw, "original.csv")
@@ -517,6 +619,18 @@ def _self_test(base):
         ("allow mode: Write in the repository", W(os.path.join(repo, "a.py")), repo, "allow", cfg_allow),
         ("allow mode: shell is never allowed outright", B("python make.py > out.txt"), repo, "pass", cfg_allow),
         ("allow mode: outside still asks", W(j("outside", "x.txt")), repo, "ask", cfg_allow),
+        # nobody at the keyboard (CLAUDE_CODE_SESSION_ATTENDED)
+        ("Unattended: a write outside the roots is refused, not asked", W(j("outside", "x.txt")), repo, "deny", cfg_away),
+        ("Unattended: a shell write outside is refused", B(f'mkdir "{j("outside", "d2")}"'), repo, "deny", cfg_away),
+        ("Unattended: inside the roots stays silent", W(os.path.join(repo, "a.py")), repo, "pass", cfg_away),
+        ("Attended (variable 1): outside still asks", W(j("outside", "x.txt")), repo, "ask", cfg_here),
+        # battery pause (the keep-awake skill's flag)
+        ("Paused: a write inside the roots is refused", W(os.path.join(repo, "a.py")), repo, "pause", cfg_low),
+        ("Paused: a shell command is refused", B("python make.py"), repo, "pause", cfg_low),
+        ("Paused: a read is refused when the guard sees it", ("Read", {"file_path": orig}), repo, "pause", cfg_low),
+        ("Paused: writing the continue file goes through", W(j("power", "continue")), repo, "pass", cfg_low),
+        ("Paused, then continue: a write goes through", W(os.path.join(repo, "a.py")), repo, "pass", cfg_cont),
+        ("A pause flag left behind an hour ago is ignored", W(os.path.join(repo, "a.py")), repo, "pass", cfg_stale),
     ]
     if os.name == "nt":
         bash_path = "/" + orig[0].lower() + orig[2:].replace("\\", "/")
@@ -539,10 +653,14 @@ def _self_test(base):
          lambda code, o, e: code == 0 and json.loads(o)["hookSpecificOutput"]["permissionDecision"] == "ask"),
         ("pass: exit 0, nothing written", {"tool_name": "Write", "tool_input": {"file_path": os.path.join(repo, "z")}, "cwd": repo},
          lambda code, o, e: code == 0 and not o and not e),
+        ("unattended ask: exit 2, refusal with the morning-report note", {"tool_name": "Write", "tool_input": {"file_path": j("outside", "y")}, "cwd": repo},
+         lambda code, o, e: code == 2 and e.startswith("Refused by the guard") and "morning report" in e and not o, cfg_away),
+        ("pause: exit 2, 'paused: battery at 18 %, connect power or say continue'", {"tool_name": "Bash", "tool_input": {"command": "ls"}, "cwd": repo},
+         lambda code, o, e: code == 2 and e.startswith("paused: battery at 18 %, connect power or say continue") and not o, cfg_low),
     ]
-    for label, call, check in proto:
+    for label, call, check, *c in proto:
         o, e = io.StringIO(), io.StringIO()
-        code = run_hook(json.dumps(call), cfg, o, e)
+        code = run_hook(json.dumps(call), c[0] if c else cfg, o, e)
         try:
             ok = bool(check(code, o.getvalue(), e.getvalue()))
         except (ValueError, KeyError, TypeError):

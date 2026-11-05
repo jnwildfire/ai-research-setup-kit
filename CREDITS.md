@@ -40,13 +40,43 @@ His licence notice for `guard_raw.py`, as required by the MIT licence:
     CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 His texts are under CC BY 4.0. This kit quotes none of them at length; it links to his guides 01
-and 06 instead of repeating them.
+and 06 instead of repeating them. The never-list of guide 04 ("never a simulation, an account, an
+install, a rule") is his; the kit adds a payment and leaves the list to the reader.
+
+## Xule Lin, Research Memex
+
+https://research-memex.org (read 5 November 2026)
+
+The author's vault started from the Obsidian structure that Research Memex suggests (an inbox,
+literature notes, permanent notes, AI conversations, research projects, daily notes, maps of
+content, templates, attachments), and guide 08 shows that structure as the place a reader may
+start from. The folder list in guide 08 paraphrases Research Memex's Obsidian setup guide; no
+other text is copied. Research Memex says: "Use this work, including for AI training. Attribution
+is the only ask." Copyright (c) 2025 Xule Lin, MIT License. Its requested attribution:
+
+    Based on [Research Memex](https://research-memex.org) by Xule Lin
+    Licensed under the MIT License
 
 ## Other sources
 
 - **Anthropic's Claude Code documentation** (code.claude.com/docs, read November 2026): the hooks
   protocol, the skills settings (`skillOverrides`, `disable-model-invocation`), the 200-line target
-  for `CLAUDE.md`, and the memory limits quoted in the guides.
+  for `CLAUDE.md`, the memory limits quoted in the guides, and the Chrome integration named in
+  guide 03. Two environment variables in guide 04 and the guard, `CLAUDE_JOB_DIR` and
+  `CLAUDE_CODE_SESSION_ATTENDED`, are not from it: they were observed in background jobs on the
+  author's computer and are described as observed.
+- **OpenAI's Codex documentation** (read 5 November 2026 at learn.chatgpt.com, where
+  developers.openai.com/codex now leads): the pages on `AGENTS.md`, skills, hooks, memories and
+  Model Context Protocol (MCP) servers, for the equivalents in Codex CLI, OpenAI's command-line
+  interface (CLI) agent, named in the README and guides 02, 03, 04 and 07.
+- **Microsoft's Windows power interfaces**: `SetThreadExecutionState`, `GetSystemPowerStatus` and
+  `powercfg`, used by the keep-awake script, whose approach comes from the author's own keep-awake
+  script.
+- **Tools named but not included**: Zotero, Better BibTeX, ZotLit, MinerU, scite, Scopus and
+  NotebookLM (guide 07); the ponytail plugin (marketplace `DietrichGebert/ponytail`, MIT licence),
+  Agent-Reach, Claude in Chrome, and the Obsidian plugins Local REST API, Dataview, Templater and
+  Relay (guide 03). Each is its makers' work under its own licence; the kit describes only how they
+  fit together.
 - **The six design shifts** of guide 02: from a summary of an Anthropic note on smaller system prompts
   for newer models, which circulated in November 2026 and whose original could not be located; the
   one quotation in the guide is from The Decoder, 2 July 2026.

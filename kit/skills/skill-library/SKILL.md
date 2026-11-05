@@ -29,6 +29,7 @@ State: `on` = full description in every session; `name-only` = name in the listi
 | `skill-library` | personal | on | a request may match a skill, or the person asks which skill fits (this page) |
 | `learn` | personal | on | the person corrects an output or says "next time", "from now on", "remember to": route the correction to the place that owns it |
 | `dictionary` | project | typed | the person wants new names or garbles added to the dictation dictionary and the exports rebuilt |
+| `keep-awake` | personal | typed | a long or unattended job is about to run on a laptop: "keep awake", "night shift" |
 | `<name>` | `<personal or project>` | `<state>` | `<the situation in the person's words, in one line>` |
 
 ## Per project

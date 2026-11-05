@@ -6,22 +6,35 @@ guide shows what that means inside a terminal agent, where you lay the desk your
 
 ## The desk
 
-In a chat window, a project's files sit in a drawer: a small drawer is read whole, a large one is
-searched, and only what the search finds reaches the model. In Claude Code there is no search in
-front of the model. Before you type a word, the agent already has a stack on its desk:
-
-- Claude Code's own instructions and the descriptions of its built-in tools;
-- your **rules file** (`CLAUDE.md`), the one in your user folder and the one in the folder where the
-  session started;
-- the one-line **description of every skill** it could use;
-- the **instructions and tools of every connector** that is switched on (a Model Context Protocol, or MCP, server: a
-  program that gives the agent access to a service such as a reference manager or a notes app);
-- the descriptions of your **agents**;
-- the index of its **memory** for this folder.
+**The idea, in any agent.** In a chat window, a project's files sit in a drawer: a small drawer is
+read whole, a large one is searched, and only what the search finds reaches the model. A terminal
+agent has no search in front of the model. Before you type a word, it already has a stack on its
+desk: its own instructions and the descriptions of its tools, your **rules file**, a short
+description of each procedure it can load on demand, the tools of every **connector** that is
+switched on (a Model Context Protocol, or MCP, server: a program that gives the agent access to a
+service such as a reference manager or a notes app), and the index of its **memory**.
 
 Everything you then say, every file it opens and every answer it gives goes on the same desk, and
 stays there for the whole session. On every turn, the model reads the entire desk again. When the
 desk is full, the agent sweeps it: it keeps a summary and forgets the rest.
+
+**In Claude Code**, the stack before the first word is:
+
+- Claude Code's own instructions and the descriptions of its built-in tools;
+- your rules file (`CLAUDE.md`), the one in your user folder and the one in the folder where the
+  session started;
+- the one-line description of every **skill** it could use;
+- the instructions and tools of every connector that is switched on;
+- the descriptions of your **agents**;
+- the index of its memory for this folder.
+
+Typing `/context` shows the stack by category (`kit/tools/measure_context.md`).
+
+**In other agents** the pieces carry other names and sit in the same places. Codex CLI, OpenAI's
+command-line interface (CLI) agent, reads `AGENTS.md` files (one in `~/.codex`, and those from the project's root down
+to the folder it starts in), starts with the name and description of each skill, and loads the
+connectors listed in its `config.toml`. For any other agent, check its documentation for what it
+puts on the desk and how to see it.
 
 Three things follow. **You lay the desk**, by what you write into the rules file and what you
 switch on. **The stack is paid for on every turn**, in your plan's allowance and in the model's
@@ -85,12 +98,19 @@ it belongs where that thing lives.
 | Long reference material, read on a trigger | a **reference file**, named in the rules file's routing table | how each data source is documented |
 | Why a rule exists, when it was set | the **changelog** | the incident that led to the rule |
 
+The table holds for any agent; the file names in the middle column are Claude Code's. In Codex CLI
+the rules file is `AGENTS.md`, and a further `AGENTS.md` in a subfolder adds rules for work started
+in that folder, the closer file overriding the earlier one, which plays a similar part to a
+path-scoped rule.
+
 ## The 200-line target
 
 Claude Code's documentation says: "target under 200 lines per CLAUDE.md file. Longer files consume
 more context and reduce adherence" (read November 2026). The template in `kit/CLAUDE.md.template` is
 about 130 lines with its placeholders. When yours passes 200, something moves out before anything
-comes in; the `learn` skill (guide 03) does that routing every time you correct the agent.
+comes in; the `learn` skill (guide 03) does that routing every time you correct the agent. Other
+agents set their own limit: Codex CLI reads at most 32 KiB of `AGENTS.md` text by default (the
+setting `project_doc_max_bytes`). The number differs; the advice to keep the file short does not.
 
 The usual reasons a rules file grows, and where the text goes instead:
 
@@ -103,22 +123,32 @@ The usual reasons a rules file grows, and where the text goes instead:
 
 ## Memory: one screen
 
-Claude Code keeps a memory folder per project, with an index (`MEMORY.md`, of which it loads the
-first 200 lines or 25 KB) and one file per topic. It writes these itself while you work. What it
-does not do is keep a topic file short, and a resume point that is appended to stops being a resume
-point: in the author's setup, one memory file grew to 41 KB through Claude's own saves. Keep each one
-to a screen; when one grows, its history moves into a handover note in the vault
-(`kit/templates/handover-note.md`), and the memory keeps where things stand and the next step.
+**The idea, in any agent.** Some agents keep their own notes between sessions: where a project
+stands, what you prefer. Such notes are a resume point, not a journal and not a place for rules.
+A rule that must hold every time goes into the rules file, where you wrote it and can read it.
+
+**In Claude Code**, the agent keeps a memory folder per project, with an index (`MEMORY.md`, of
+which it loads the first 200 lines or 25 KB) and one file per topic. It writes these itself while
+you work. What it does not do is keep a topic file short, and a resume point that is appended to
+stops being a resume point: in the author's setup, one memory file grew to 41 KB through Claude's
+own saves. Keep each one to a screen; when one grows, its history moves into a handover note in the
+vault (`kit/templates/handover-note.md`), and the memory keeps where things stand and the next step.
+
+**In other agents.** Codex CLI's memories are off by default and kept under `~/.codex`; its
+documentation says to "treat memories as a helpful recall layer, not as the only source for rules
+that must always apply", the same division as here.
 
 ## Terms used
 
 - **Context window**: everything the model reads on one turn; the desk.
 - **Token**: the unit the model reads and is billed by, about three quarters of a word.
-- **Rules file**: `CLAUDE.md`, read at the start of every session in its folder.
+- **Rules file**: the file the agent reads at the start of every session in its folder: `CLAUDE.md`
+  in Claude Code, `AGENTS.md` in Codex CLI.
 - **Skill**: a folder with a `SKILL.md`: a short description always on the desk, a body loaded when
   the skill is used.
 - **Connector (MCP server)**: a program that gives the agent tools for a service.
-- **Hook**: a script Claude Code runs before or after an action of the agent, which can refuse it.
+- **Hook**: a script the agent's program runs before or after an action of the agent, which can
+  refuse it.
 - **Memory**: the agent's own notes on where each project stands, kept in your user folder.
 - **Path-scoped rule**: a rules file in `.claude/rules/` that loads only when the agent opens a file
   matching its `paths:`.
