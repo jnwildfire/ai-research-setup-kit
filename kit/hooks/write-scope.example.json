@@ -4,5 +4,9 @@
   "expires": "<when the grant ends, for example 2026-11-06T09:00>",
   "write": [
     "<a folder outside the roots that the plan names, for example C:/Users/you/Downloads/export>"
+  ],
+  "read": [
+    "<one file in a blocked folder that the plan names, for example C:/Users/you/OneDrive - Your University/Admin/form.pdf>",
+    "<a whole blocked folder, with /** at the end, for example C:/Users/you/OneDrive - Your University/Admin/2026/**>"
   ]
 }
