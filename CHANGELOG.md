@@ -24,8 +24,9 @@ the lines of v0.1.1, and what it added is mirrored here in generic form.
   (an exact path, or a folder with `/**`), a third strictness `existing-only` for an archive a script
   fills, and git guardrails (force push to a protected branch, `reset --hard`, `clean`, `branch -D`,
   `checkout -- .` and `restore .` refused; other branch deletions asked). The matcher in
-  `settings.example.json` adds Read, Glob and Grep. Self-test of 155 checks; each rule was switched
-  off in turn to see its cases fail.
+  `settings.example.json` adds Read, Glob and Grep. A redirect inside `$( ... )` is read without the
+  closing bracket, so `2>/dev/null)` is no longer taken for a file outside the roots. Self-test of
+  156 checks; each rule was switched off in turn to see its cases fail.
 - **`kit/hooks/output_check.py`**: dashes inside sentences, abbreviations before their long form,
   bare issue numbers, frontmatter that does not parse; 26 checks, with and without PyYAML.
   **`kit/tools/archive_notes.py`**: the thirty-day archive of the agent's notes as a script, with a

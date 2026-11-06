@@ -548,6 +548,8 @@ def shell_targets(seg, cwd):
     found = []
     for m in REDIRECT.finditer(seg):
         t = m.group(1).strip("\"'")
+        if t.count(")") > t.count("("):  # the closing bracket of a $( ... ) around the redirect
+            t = t.rstrip(")")
         if t and t.lower() not in SINKS:
             found.append((t, "redirect"))
     cm = COPY_VERBS.search(seg)
@@ -1131,6 +1133,7 @@ def _self_test(base):
         ("Root: a redirect to a quoted path with spaces in the data root", B(f'python make.py > "{D}\\projects\\x.txt"'), res, "pass"),
         ("Root: a write to Downloads asks", W(os.path.join(home, "Downloads", "x.txt")), res, "ask"),
         ("Root: a write into the cloud drive outside the roots asks", W(os.path.join(private, "new.docx")), res, "ask"),
+        ("Shell: a redirect to /dev/null inside $( ) passes", B('c=$(curl -s -o page.html https://example.org 2>/dev/null)'), res, "pass", m_away),
         ("Read block: Read a file outside the roots", ("Read", {"file_path": os.path.join(private, "report.pdf")}), res, "deny", m, ask_p),
         ("Read block: Glob in another folder of the drive", ("Glob", {"pattern": "*.docx", "path": os.path.join(cloud, "Documents")}), res, "deny", m, ask_p),
         ("Read block: Glob with an absolute pattern into it", ("Glob", {"pattern": private.replace("\\", "/") + "/**/*.pdf"}), res, "deny"),

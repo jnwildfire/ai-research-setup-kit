@@ -42,7 +42,7 @@ script here: not a hook, but a check the agent runs on a finished note before it
    files and the protected branches, as the guard sees them.
 4. Run `python -I ~/.claude/hooks/guard.py --self-test`. It builds a temporary folder tree, sends
    about 150 synthetic tool calls through the same code the hook uses, and must end with every check
-   passed ("155 of 155 checks passed" on Windows, one fewer elsewhere). It does not touch your
+   passed ("156 of 156 checks passed" on Windows, one fewer elsewhere). It does not touch your
    folders, and your session's own settings do not change its result.
 5. Merge `settings.example.json` into `~/.claude/settings.json` with the absolute path to the
    script. Merge, do not overwrite: the file may hold other settings. If your Python answers only
