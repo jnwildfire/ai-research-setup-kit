@@ -1,5 +1,50 @@
 # Changelog
 
+## v0.1.2 (unreleased, 6 November 2026)
+
+The third round: the author's own setup was restructured on the night of 5 to 6 November 2026 along
+the lines of v0.1.1, and what it added is mirrored here in generic form.
+
+- **The map.** `docs/index.html`, the whole setup on one page, published with GitHub Pages and linked
+  from the top of the README. `overview/` now only points there.
+- **Eleven skills for a notes vault**, each in the eight-layer layout: `notes-editing` (through the
+  connector first, one passage at a time, and `references/connector-gotchas.md`), `daily-note` (with
+  `scripts/now.py`: every time stamp comes from the script, never from an estimate), `task-board`
+  (the checker: every input is checked against the board; `scripts/open_tasks.py` with `--check`),
+  `process-meeting`, `pre-meeting` (with `scripts/series_digest.py`), `process-inbox` (the inbox gate
+  as a folder rule, wiki articles and data-source notes), `literature-note` (the card with `read:`
+  and the routes to full text), `do-it-later` (a queue of specs that run cold), `talk` (with a
+  speaker guide written like an assembly manual), `progress-report`, and `workflow-health` (with
+  `scripts/workflow_health.py`: the sessions and the vault measured without a model, paths and
+  thresholds in a configuration block). `skill-library` indexes them and holds the code words;
+  `learn` routes to reference files too and checks that a file it writes into is still in shape;
+  `keep-awake` names the guard's wider matcher.
+- **`guard.py`**: a configurable read block for the cloud drive outside the roots (Read, Glob, Grep
+  and the shell's reading commands, and a recursive search started above the drive), read grants
+  (an exact path, or a folder with `/**`), a third strictness `existing-only` for an archive a script
+  fills, and git guardrails (force push to a protected branch, `reset --hard`, `clean`, `branch -D`,
+  `checkout -- .` and `restore .` refused; other branch deletions asked). The matcher in
+  `settings.example.json` adds Read, Glob and Grep. Self-test of 155 checks; each rule was switched
+  off in turn to see its cases fail.
+- **`kit/hooks/output_check.py`**: dashes inside sentences, abbreviations before their long form,
+  bare issue numbers, frontmatter that does not parse; 26 checks, with and without PyYAML.
+  **`kit/tools/archive_notes.py`**: the thirty-day archive of the agent's notes as a script, with a
+  dry run, a log line per move and a self-test. `kit/tools/README.md` lists the tools.
+- **`kit/CLAUDE.md.template`** in the shape of the author's rules file after it went from 344 lines
+  to 196: principles with their reasons, one line each for what a job may do unattended, the AI
+  declaration on what leaves, the brief, the task-board checker and the model routing by kind of
+  work, two layout rules for the data root, a routing table to the reference files (the automation
+  map among them), and an optional "Compact instructions" section. About 180 lines.
+- **`kit/context/automation-map.md`**, and in guide 04 sections on the guard's new verdicts, the
+  automation map, and preparing for a compaction (auto-compact off, the save step before `/compact`,
+  the "Compact instructions" section as the documented lever, a `PreCompact` hook can only block).
+  Guide 04 also says that the two environment variables of background jobs are Claude Code's own.
+- **Guide 03**: the trigger test as the Checks layer of a library, with the author's eight prompts
+  and their expected skills. **Guide 08**: the reconnaissance pass and the dictation lane, after
+  Kevin Smith's order (reconnaissance first, then the author's dictation), and the archive script.
+- START-HERE installs the new skills, the guard's new settings, the read-block test and the
+  automation map; guide 02 names the template's new length.
+
 ## v0.1.1 (unreleased)
 
 The second round, after the author's review of v0.1 on 5 November 2026.

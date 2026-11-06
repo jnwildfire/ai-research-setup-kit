@@ -15,10 +15,15 @@ intelligence (AI) agent in research, and it owes him three things.
   (MIT): the idea of a hook that refuses any change to the originals, the way shell commands are
   split into statements, and the lists of destructive and copying commands. It reached this kit by
   way of the author's own guard for immutable folders. The write scope, the grants, the three
-  verdicts, the notes-connector check and the self-test are added here.
+  verdicts, the notes-connector check, the read block, the git guardrails and the self-test are
+  added here.
 - **The method this kit extends**: deposit, never edit; every claim says what it rests on; every
   number carries its basis; corrections become rules the same day; the product is judged, not the
-  plan; the night-shift rule; executors that say what they may write.
+  plan; the night-shift rule; executors that say what they may write. The reconnaissance pass and
+  the dictation lane of guide 08 follow his order, reconnaissance first and then the author's
+  dictation of what is missing, with the rule of his guide 02 that the later word wins; the
+  `### Inferred` heading of the templates and the skills, and the review answered in a table in the
+  `talk` skill, are his too.
 
 His licence notice for `guard_raw.py`, as required by the MIT licence:
 
@@ -62,9 +67,16 @@ is the only ask." Copyright (c) 2025 Xule Lin, MIT License. Its requested attrib
 - **Anthropic's Claude Code documentation** (code.claude.com/docs, read November 2026): the hooks
   protocol, the skills settings (`skillOverrides`, `disable-model-invocation`), the 200-line target
   for `CLAUDE.md`, the memory limits quoted in the guides, and the Chrome integration named in
-  guide 03. Two environment variables in guide 04 and the guard, `CLAUDE_JOB_DIR` and
-  `CLAUDE_CODE_SESSION_ATTENDED`, are not from it: they were observed in background jobs on the
-  author's computer and are described as observed.
+  guide 03; and, read 6 November 2026, what guide 04 says about compaction (the hooks reference on
+  `PreCompact` and `PostCompact`, the costs page on the "Compact instructions" section, the settings
+  reference on `autoCompactEnabled`). Two environment variables in guide 04 and the guard,
+  `CLAUDE_JOB_DIR` and `CLAUDE_CODE_SESSION_ATTENDED`, are not from it: they were observed in
+  background jobs on the author's computer, are set by Claude Code itself (nothing in the author's
+  configuration sets them, checked 5 November 2026), and are described as observed.
+- **The MIT lecture "How to Speak"** (MIT OpenCourseWare): the talk rules in the Checks of the
+  `talk` skill (open with a promise, say the one idea three times and fence it, ask the room one
+  question and wait, end on the contributions and never on "thank you", the five qualities of a
+  memorable idea) follow it. No text is copied.
 - **OpenAI's Codex documentation** (read 5 November 2026 at learn.chatgpt.com, where
   developers.openai.com/codex now leads): the pages on `AGENTS.md`, skills, hooks, memories and
   Model Context Protocol (MCP) servers, for the equivalents in Codex CLI, OpenAI's command-line

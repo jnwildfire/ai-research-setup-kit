@@ -5,7 +5,11 @@ artificial intelligence (AI) agent to work across all of it under rules they set
 checks before anything leaves. You need to know what a terminal is; you do not need to program.
 The agent sets the kit up with you and explains each step before it takes it.*
 
-Johannes Wildfeuer, Technical University of Denmark (DTU), November 2026 (jniwi@dtu.dk). Draft v0.1.1, not yet released.
+Johannes Wildfeuer, Technical University of Denmark (DTU), November 2026 (jniwi@dtu.dk). Draft v0.1.2, not yet released.
+
+**See the map first**: [the whole setup on one page](https://jnwildfire.github.io/ai-research-setup-kit/),
+what is connected to what and what each part does, with text beside every part. The page is
+[docs/index.html](docs/index.html) in this repository, published with GitHub Pages.
 
 ## The first track, and this one
 
@@ -27,11 +31,14 @@ repositories, a shared data drive and a notes vault, and who wants one setup acr
    words, six design shifts for current models, and a rules file under 200 lines
    ([guide 02](guide/02-what-the-agent-reads.md)).
 3. **A skill library**: skills in eight layers, loaded only when needed, switched per project, with a
-   router and a worked example, the dictation dictionary ([guide 03](guide/03-skills-and-the-library.md)).
-4. **A guard with a write scope**: originals refused, writes outside the roots asked, grants written
-   into the plan of a job that runs while you are away, a night-shift list of your own with a
-   morning report, and a computer that stays awake and pauses its job before the battery runs out
-   ([guide 04](guide/04-guards-and-night-shifts.md)).
+   router, a worked example (the dictation dictionary), the skills for a notes vault (meetings, the
+   daily note, the task board, the inbox, literature, talks, reports), and the trigger test that
+   checks each one fires ([guide 03](guide/03-skills-and-the-library.md)).
+4. **A guard with a write scope**: originals refused, reads kept out of the online-only part of a
+   cloud drive, the git commands that lose work refused, writes outside the roots asked, grants
+   written into the plan of a job that runs while you are away, a night-shift list of your own with a
+   morning report, a computer that stays awake and pauses its job before the battery runs out, a map
+   of every automation, and a compaction you prepare for ([guide 04](guide/04-guards-and-night-shifts.md)).
 5. **What research adds to the method**: the paper itself before a claim carries weight, a basis on
    every number, the agent as referee, faults made into rules, decisions as tickets, one base for
    several people, which model for which work ([guide 05](guide/05-the-research-method.md)).
@@ -41,8 +48,8 @@ repositories, a shared data drive and a notes vault, and who wants one setup acr
    per paper, a connector that reads full text, and the services that check a citation
    ([guide 07](guide/07-literature-and-the-agent.md)).
 8. **The knowledge base**: the vault laid out in lanes, the author's as one example, Research Memex
-   as a place to start, and an archive for the agent's outputs that runs itself
-   ([guide 08](guide/08-the-knowledge-base.md)).
+   as a place to start, an archive for the agent's outputs that runs itself, and a reconnaissance
+   pass followed by a dictation lane for what only you know ([guide 08](guide/08-the-knowledge-base.md)).
 
 ## The ideas, and their form in your agent
 
@@ -67,22 +74,31 @@ any other agent, check its documentation; this table is a map, not a promise.
 |---|---|
 | [START-HERE.md](START-HERE.md) | The instructions the agent follows to set you up. You may read them; you do not need to. |
 | [guide/](guide/) | Eight guides, ten to twenty minutes each, in the order above. |
-| [kit/CLAUDE.md.template](kit/CLAUDE.md.template) | A rules file of about 130 lines: three roots, standing behaviour as principles with their reasons, a routing table, the maintenance rule. |
-| [kit/skills/skill-library/](kit/skills/skill-library/SKILL.md) | The router: an index of every installed skill, one line each. |
-| [kit/skills/learn/](kit/skills/learn/SKILL.md) | Routes each of your corrections to the place that owns it (a hook, a skill, the rules file, memory) instead of growing the rules file. |
+| [docs/index.html](docs/index.html) | The map: the whole setup on one page, [published here](https://jnwildfire.github.io/ai-research-setup-kit/). |
+| [kit/CLAUDE.md.template](kit/CLAUDE.md.template) | A rules file of about 180 lines: three roots, standing behaviour as principles with their reasons, a routing table to the reference files, the maintenance rule. |
+| [kit/skills/skill-library/](kit/skills/skill-library/SKILL.md) | The router: an index of every installed skill, one line each, and the code words. |
+| [kit/skills/learn/](kit/skills/learn/SKILL.md) | Routes each of your corrections to the place that owns it (a hook, a skill, a reference file, the rules file, memory) instead of growing the rules file. |
+| [kit/skills/notes-editing/](kit/skills/notes-editing/SKILL.md) | How to write to the vault without damage: through the connector, one passage at a time, and the connector's known traps. |
+| [kit/skills/daily-note/](kit/skills/daily-note/SKILL.md) | The daily note as a running log, every time stamp taken from a clock script. |
+| [kit/skills/task-board/](kit/skills/task-board/SKILL.md) | The task board kept as a secretary: every input checked against it, single tasks patched safely, each write verified by a script. |
+| [kit/skills/process-meeting/](kit/skills/process-meeting/SKILL.md), [pre-meeting/](kit/skills/pre-meeting/SKILL.md) | A transcript turned into a meeting note with the decisions on top; the one-screen brief before the next meeting of the series. |
+| [kit/skills/process-inbox/](kit/skills/process-inbox/SKILL.md) | The inbox routed behind its gate; wiki articles and data-source notes. |
+| [kit/skills/literature-note/](kit/skills/literature-note/SKILL.md) | The literature card with what was read and where each point sits, and the routes to a paper's full text. |
+| [kit/skills/do-it-later/](kit/skills/do-it-later/SKILL.md) | A queue of deferred work, each entry a spec that runs cold in a fresh session. |
+| [kit/skills/talk/](kit/skills/talk/SKILL.md), [progress-report/](kit/skills/progress-report/SKILL.md) | A talk from the brief to a deck read slide by slide, with a speaker guide like an assembly manual; a report for a period drawn from the vault. |
+| [kit/skills/workflow-health/](kit/skills/workflow-health/SKILL.md) | A weekly measurement of the sessions and the vault without a model, and the judgement on top when you ask. |
 | [kit/skills/dictionary/](kit/skills/dictionary/SKILL.md) | A dictation dictionary in one note, exported to Wispr Flow and to term lists. The worked example of a skill in eight layers. |
 | [kit/skills/keep-awake/](kit/skills/keep-awake/README.md) | Keeps the computer awake through a long job, also with the lid closed, and pauses the job on battery at 20 %. Windows script, macOS note. |
-| [kit/hooks/](kit/hooks/README.md) | `guard.py`, the guard on originals, on the write scope and on the battery pause, with a self-test, and the settings to register it. |
+| [kit/hooks/](kit/hooks/README.md) | `guard.py`, the guard on originals, the write scope, the read block, git and the battery pause, with a self-test, and the settings to register it; `output_check.py`, the writing check. |
+| [kit/context/automation-map.md](kit/context/automation-map.md) | The table of everything that runs without a session asking for it, and what depends on each. |
 | [kit/agents/](kit/agents/) | Three executor agents, routed by kind of work: standard, hard, and deep research. |
 | [kit/templates/](kit/templates/) | A meeting note with a decisions table, a literature card with a `read:` field, a daily note, a one-screen handover note. |
-| [kit/tools/measure_context.md](kit/tools/measure_context.md) | How to read `/context` and what to cut. |
-| [kit/tools/literature-stack.md](kit/tools/literature-stack.md) | The literature tools of guide 07, in the order to install them, with a test for each. |
-| [overview/](overview/README.md) | The graphical overview of the whole setup: step two, not yet made. |
+| [kit/tools/](kit/tools/README.md) | The archive script for the agent's notes, how to read `/context`, and the literature tools of guide 07. |
 | [CREDITS.md](CREDITS.md), [LICENSE.md](LICENSE.md), [CHANGELOG.md](CHANGELOG.md) | Who and what this builds on, the licences, the versions. |
 
-The kit's two Python scripts, `guard.py` and `export_dictionary.py`, use the standard library only;
-the keep-awake script uses PowerShell, which every Windows computer has. The agent runs them for
-you.
+The kit's Python scripts use the standard library only (the output check also reads frontmatter
+with PyYAML when it is installed), and each has its paths in a configuration block at the top; the
+keep-awake script uses PowerShell, which every Windows computer has. The agent runs them for you.
 
 ## How to start
 
@@ -118,8 +134,10 @@ Not part of the kit, and none is needed. Guide 03 says more about each.
 
 Nothing of the author's projects is in the kit: no data, no notes, no names of partners or sites.
 The cases in the guides are anonymised. The kit holds the method and the mechanisms, not the content.
-It is also deliberately small: four skills, one hook, three agents, four templates. Add what your
-own work needs when you need it; the `learn` skill and guide 03 say where.
+It stays deliberately small for what it covers: one hook, three agents, four templates, and skills
+only for workflows the author ran and corrected for months before they were written down. Install
+the ones your work has, and add what it needs when it needs it; the `learn` skill and guide 03 say
+where.
 
 ## Credits and licence
 

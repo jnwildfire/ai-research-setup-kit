@@ -1,0 +1,1541 @@
+<title>Research Setup Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: a wayfinding sheet. One map on top, four routes as a purple overprint, then the stations, each a drawing with short text beside it. Line weight carries rank: places 2.5, cards 1.5, connections 1.25, the route 4.5 in purple. */
+:root{
+  --paper:#F2F4F7; --panel:#FFFFFF; --ink:#141A22; --muted:#55606E; --line:#C4CCD6; --soft:#E6EAF0; --grid:#E9EDF2;
+  --rules:#B3261E; --rules-t:#FAE6E3;
+  --skills:#23704A; --skills-t:#DFF0E5;
+  --hooks:#2A3E7C; --hooks-t:#E2E7F6;
+  --memory:#965800; --memory-t:#F8EBD3;
+  --route:#A0288F; --route-t:#F7E2F3;
+  --f-display:"Archivo","Arial Narrow","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Atkinson Hyperlegible","Segoe UI",Verdana,sans-serif;
+  --f-mono:"IBM Plex Mono",Consolas,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0E1217; --panel:#161C23; --ink:#E5E9EE; --muted:#9BA5B3; --line:#344150; --soft:#1F2730; --grid:#1A2129;
+    --rules:#F08A7E; --rules-t:#3A201D;
+    --skills:#7BCB95; --skills-t:#173022;
+    --hooks:#A2B4F2; --hooks-t:#1C2544;
+    --memory:#EDB250; --memory-t:#352812;
+    --route:#E68DD8; --route-t:#351D34;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0E1217; --panel:#161C23; --ink:#E5E9EE; --muted:#9BA5B3; --line:#344150; --soft:#1F2730; --grid:#1A2129;
+  --rules:#F08A7E; --rules-t:#3A201D;
+  --skills:#7BCB95; --skills-t:#173022;
+  --hooks:#A2B4F2; --hooks-t:#1C2544;
+  --memory:#EDB250; --memory-t:#352812;
+  --route:#E68DD8; --route-t:#351D34;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin-inline:auto}
+a{color:inherit;text-decoration-color:var(--route);text-underline-offset:3px}
+a:focus-visible,button:focus-visible{outline:3px solid var(--route);outline-offset:3px;border-radius:6px}
+h1,h2,h3{font-family:var(--f-display);font-variation-settings:"wdth" 84;text-wrap:balance;margin:0;line-height:1.08}
+code,.mono{font-family:var(--f-mono);font-size:.88em}
+p{margin:0}
+
+/* masthead */
+.mast{padding-block:40px 24px}
+.kicker{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.kicker .plate{width:30px;height:30px;border-radius:8px;background:var(--ink);color:var(--paper);display:grid;place-items:center}
+.mast h1{font-size:clamp(2.2rem,5.4vw,3.9rem);font-weight:800;margin-top:14px;max-width:18ch}
+.lede{font-size:clamp(1.05rem,1.6vw,1.25rem);max-width:60ch;margin-top:16px;color:var(--ink)}
+.lede b{font-weight:700}
+
+/* the map */
+.map{margin:0;background-color:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:40px 40px;background-position:-1px -1px}
+.map svg{display:block;width:100%;height:auto}
+.map svg.map-p{display:none}
+@media (max-width:1023px){.map svg.map-d{display:none}.map svg.map-p{display:block;max-width:520px;margin-inline:auto}}
+.map figcaption{font-size:14px;color:var(--muted);margin-top:12px;max-width:80ch}
+
+/* legend */
+.legend{display:flex;flex-wrap:wrap;gap:12px 28px;margin-top:18px;padding:14px 16px;border-radius:14px;background:var(--panel);border:1px solid var(--line)}
+.lg{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;min-width:0}
+.lg-h{font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-right:2px}
+.lg-i{display:inline-flex;align-items:center;gap:6px;font-size:15px;white-space:nowrap}
+.hi{width:22px;height:22px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;color:var(--ink);overflow:visible}
+.cr{color:var(--rules)}.cs{color:var(--skills)}.ch{color:var(--hooks)}.cm{color:var(--memory)}.co{color:var(--route)}.cmu{color:var(--muted)}
+.mk-mini{width:22px;height:22px;flex:none}
+.sw{width:30px;height:16px;flex:none;overflow:visible}
+
+/* index */
+.index{margin-top:22px;display:flex;flex-wrap:wrap;gap:8px}
+.index a{display:inline-flex;align-items:center;gap:8px;padding:7px 12px 7px 8px;border-radius:999px;background:var(--panel);border:1px solid var(--line);text-decoration:none;font-size:15px}
+.index a:hover{border-color:var(--ink)}
+.index .pl{width:26px;height:26px;border-radius:7px;background:var(--ink);color:var(--paper);display:grid;place-items:center}
+.index .pl .hi{width:17px;height:17px;color:var(--paper)}
+
+/* bands */
+.band{padding-block:56px;border-top:1px solid var(--line)}
+#routes{margin-top:44px}
+.band-head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:26px}
+.plate{width:56px;height:56px;border-radius:14px;background:var(--ink);color:var(--paper);display:grid;place-items:center;flex:none}
+.plate .hi{width:32px;height:32px;color:var(--paper)}
+.plate.multi{width:auto;padding-inline:10px;gap:6px;display:flex;align-items:center}
+.plate.multi .hi{width:24px;height:24px}
+.eyebrow{font-size:13px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.band-head h2{font-size:clamp(1.7rem,3.2vw,2.35rem);font-weight:800;margin-top:4px}
+.band-head .sub{font-size:17px;color:var(--muted);margin-top:6px;max-width:62ch}
+
+/* routes */
+.route{padding-block:26px;border-top:1px dashed var(--line)}
+.route:first-of-type{border-top:0;padding-top:4px}
+.route h3{font-size:1.35rem;font-weight:800;display:flex;align-items:center;gap:10px}
+.route h3 .hi{color:var(--route)}
+.course{--n:6;list-style:none;margin:20px 0 0;padding:0;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:0 14px;position:relative}
+.course::before{content:"";position:absolute;top:18.5px;height:4px;background:var(--route);opacity:.85;
+  left:calc((100% - (var(--n) - 1) * 14px) / var(--n) / 2);right:calc((100% - (var(--n) - 1) * 14px) / var(--n) / 2)}
+.ctl{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;min-width:0}
+.mark{width:40px;height:40px;flex:none;border-radius:50%;border:3px solid var(--route);background:var(--panel);color:var(--route);
+  font:800 17px/1 var(--f-display);display:grid;place-items:center;position:relative;z-index:1}
+.ctl.start .mark{border:0;background:transparent}
+.ctl.start .mark svg{width:40px;height:40px;display:block}
+.mk-tri{fill:var(--panel);stroke:var(--route);stroke-width:3;stroke-linejoin:round}
+.ctl.finish .mark{box-shadow:0 0 0 4px var(--panel),0 0 0 7px var(--route)}
+.body{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.where{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.where .hi{width:18px;height:18px}
+.ctl p{font-size:15px;line-height:1.4;max-width:20ch}
+.route-key{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:15px;color:var(--muted);margin-top:8px}
+.route-key span{display:inline-flex;align-items:center;gap:8px}
+.mini-ctl{width:22px;height:22px;border-radius:50%;border:2.5px solid var(--route);display:inline-block}
+.mini-fin{width:16px;height:16px;border-radius:50%;border:2.5px solid var(--route);box-shadow:0 0 0 3px var(--paper),0 0 0 5.5px var(--route);display:inline-block;margin:3px}
+@media (max-width:820px){
+  .course{grid-template-columns:1fr;gap:18px}
+  .course::before{top:20px;bottom:20px;left:18px;right:auto;width:4px;height:auto}
+  .ctl{flex-direction:row;align-items:flex-start;text-align:left;gap:14px}
+  .body{align-items:flex-start;padding-top:2px}
+  .ctl p{max-width:none}
+}
+
+/* stations */
+.st-body{display:grid;grid-template-columns:minmax(0,500px) minmax(0,1fr);gap:48px;align-items:start}
+@media (max-width:900px){.st-body{grid-template-columns:minmax(0,1fr);gap:28px}}
+.fig{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+.fig svg{display:block;width:100%;height:auto}
+.fig figcaption{font-size:14px;color:var(--muted);margin-top:12px}
+@media (max-width:600px){
+  .map,.fig{margin-inline:-16px;border-radius:0;border-left:0;border-right:0;padding:12px 6px}
+  .map figcaption,.fig figcaption{padding-inline:10px}
+}
+.txt{display:flex;flex-direction:column;gap:14px;min-width:0;max-width:62ch}
+.txt b{font-weight:700}
+.note{background:var(--soft);border-radius:12px;padding:14px 16px;font-size:15.5px;display:flex;gap:12px;align-items:flex-start}
+.note .hi{margin-top:2px}
+.kit{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px;padding-top:14px;border-top:1px solid var(--line)}
+.kit .lbl{font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-right:4px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-mono);font-size:13px;padding:4px 10px;border-radius:8px;background:var(--panel);border:1px solid var(--line);white-space:nowrap}
+.chip.g{font-family:var(--f-body);font-size:14px;font-weight:700}
+.chip.habit{font-family:var(--f-body);font-size:14px;border-style:dashed;color:var(--muted)}
+.kinds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:560px){.kinds{grid-template-columns:minmax(0,1fr)}}
+.kind{border-radius:12px;padding:14px;border:1.5px solid var(--line);background:var(--panel);display:flex;flex-direction:column;gap:6px;min-width:0}
+.kind h3{font-size:1.1rem;font-weight:800;display:flex;align-items:center;gap:8px;font-variation-settings:"wdth" 90}
+.kind .when{font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.kind p{font-size:15.5px}
+.kind.r{border-color:var(--rules)}.kind.r .when{color:var(--rules)}
+.kind.s{border-color:var(--skills)}.kind.s .when{color:var(--skills)}
+.kind.h{border-color:var(--hooks)}.kind.h .when{color:var(--hooks)}
+.kind.m{border-color:var(--memory)}.kind.m .when{color:var(--memory)}
+.tblw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:440px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+td code{font-size:13px}
+ul.plain{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+
+/* the folder, opened */
+.folders{margin-top:40px;display:flex;flex-direction:column;gap:18px}
+.folders h3{font-size:1.45rem;font-weight:800}
+.folders .sub{font-size:16px;color:var(--muted);max-width:62ch}
+.fold-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+@media (max-width:900px){.fold-grid{grid-template-columns:minmax(0,1fr)}}
+.fold-grid .fig svg{max-width:500px;margin-inline:auto}
+
+/* inventory */
+.inv{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+@media (max-width:1000px){.inv{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.inv{grid-template-columns:minmax(0,1fr)}}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.tile .top{display:flex;align-items:center;gap:12px}
+.tile .n{font:800 2.2rem/1 var(--f-display);font-variation-settings:"wdth" 80;font-variant-numeric:tabular-nums}
+.tile .what{font-weight:700;font-size:16px}
+.tile p{font-size:14.5px;color:var(--muted)}
+.tile .names{font-family:var(--f-mono);font-size:13px;color:var(--ink)}
+.howto{margin-top:36px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:36px;align-items:start}
+@media (max-width:900px){.howto{grid-template-columns:minmax(0,1fr)}}
+ol.steps{margin:0;padding:0;list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:14px}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:36px minmax(0,1fr);gap:12px;align-items:start}
+ol.steps li::before{content:counter(s);width:32px;height:32px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center;font:800 15px/1 var(--f-display)}
+.say{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:8px}
+.say code{font-size:15px;background:var(--soft);padding:6px 10px;border-radius:8px}
+.say button{font:700 14px var(--f-body);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer}
+.say button:hover{border-color:var(--ink)}
+.done{font-size:15px;color:var(--muted)}
+
+footer{border-top:1px solid var(--line);margin-top:64px;padding-block:28px 48px;font-size:14.5px;color:var(--muted)}
+footer p+p{margin-top:8px}
+
+/* drawings: text */
+svg.dg text{font-family:var(--f-body);font-size:13.5px;fill:var(--ink)}
+svg.dg .tb{font-weight:700}
+svg.dg .ts{font-size:13px;fill:var(--muted)}
+svg.dg .tsi{font-size:13px;fill:var(--ink)}
+svg.dg .tx{font-size:12.5px;fill:var(--muted)}
+svg.dg .txi{font-size:12.5px;fill:var(--ink)}
+svg.dg .tcap{font-size:11.5px;font-weight:700;letter-spacing:.08em;fill:var(--muted)}
+svg.dg .th{font-family:var(--f-display);font-weight:800;font-size:23px;font-stretch:85%}
+svg.dg .th2{font-family:var(--f-display);font-weight:800;font-size:18px;font-stretch:85%}
+svg.dg .tn{font-family:var(--f-display);font-weight:700;font-size:15px}
+svg.dg .tbig{font-family:var(--f-display);font-weight:800;font-size:34px;font-stretch:85%}
+svg.dg .tm{font-family:var(--f-mono);font-size:12px;fill:var(--ink)}
+svg.dg .tmb{font-family:var(--f-mono);font-size:12.5px;font-weight:600;fill:var(--ink)}
+svg.dg .tpath{font-family:var(--f-mono);font-size:12.5px;fill:var(--ink)}
+svg.dg .there{font-size:11.5px;font-weight:700;letter-spacing:.1em;fill:var(--route)}
+svg.dg .hx{fill:var(--hooks)}
+/* drawings: line weights by rank. Places 2.5, cards 1.5, connections 1.25, the route 4.5 */
+.bxi{fill:var(--panel);stroke:var(--ink);stroke-width:2.5}
+.desk{fill:var(--soft);stroke:var(--ink);stroke-width:2.5}
+.bx{fill:var(--panel);stroke:var(--line);stroke-width:1.5}
+.pll{fill:var(--panel);stroke:var(--line);stroke-width:1.5}
+.dash{fill:var(--panel);stroke:var(--muted);stroke-width:1.5;stroke-dasharray:5 4}
+.ghost{fill:none;stroke:var(--muted);stroke-width:1.5;stroke-dasharray:5 4}
+.kr{fill:var(--rules-t);stroke:var(--rules);stroke-width:1.5}
+.ks{fill:var(--skills-t);stroke:var(--skills);stroke-width:1.5}
+.kh{fill:var(--hooks-t);stroke:var(--hooks);stroke-width:1.5}
+.km{fill:var(--memory-t);stroke:var(--memory);stroke-width:1.5}
+.gate{fill:var(--soft);stroke:var(--ink);stroke-width:1.5}
+.pl{fill:var(--soft)}
+.band{fill:var(--hooks-t)}
+.ln{fill:none;stroke:var(--ink);stroke-width:1.25}
+.lnd{fill:none;stroke:var(--ink);stroke-width:1.25;stroke-dasharray:5 4}
+.lnm{fill:none;stroke:var(--muted);stroke-width:1.25}
+.lnt{fill:none;stroke:var(--muted);stroke-width:1.25}
+.lnf{fill:none;stroke:var(--line);stroke-width:1}
+.route{fill:none;stroke:var(--route);stroke-width:4.5;stroke-opacity:.85}
+.rstart{fill:var(--panel);stroke:var(--route);stroke-width:3;stroke-linejoin:round}
+.rring{fill:none;stroke:var(--route);stroke-width:2.5}
+.rfin{fill:var(--panel);stroke:var(--route);stroke-width:2.5}
+.pic{fill:none;stroke:var(--ink);stroke-width:1.5}
+.dot{fill:var(--panel);stroke:var(--ink);stroke-width:1.5}
+.lnp{fill:none;stroke:var(--paper);stroke-width:5.5;stroke-linecap:round;stroke-linejoin:round}
+.lnx{fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round}
+.ck{fill:var(--panel);stroke:var(--hooks);stroke-width:2}
+.fr{fill:var(--rules)}.fs{fill:var(--skills)}.fh{fill:var(--hooks)}.fm{fill:var(--memory)}.fo{fill:var(--route)}
+.fi{fill:var(--ink)}.fmu{fill:var(--muted)}.fsoft{fill:var(--soft)}.fp{fill:var(--panel)}
+.ico{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;color:var(--ink)}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+
+<!-- one set of pictograms, reused everywhere -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-code" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.3"/><circle cx="6" cy="19" r="2.3"/><circle cx="18" cy="7" r="2.3"/><path d="M6 7.3v9.4M18 9.3c0 4.2-3.4 5.3-6.4 5.7-2.4.3-4.6.9-5.6 1.7"/></symbol>
+  <symbol id="i-data" viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="7" ry="2.6"/><path d="M5 5.5v13c0 1.45 3.1 2.6 7 2.6s7-1.15 7-2.6v-13M5 12c0 1.45 3.1 2.6 7 2.6s7-1.15 7-2.6"/></symbol>
+  <symbol id="i-know" viewBox="0 0 24 24"><path d="M12 6.8C10 5.2 7 4.6 3.5 4.9v13.4c3.5-.3 6.5.3 8.5 1.9 2-1.6 5-2.2 8.5-1.9V4.9C17 4.6 14 5.2 12 6.8zM12 6.8v13.4"/></symbol>
+  <symbol id="i-rules" viewBox="0 0 24 24"><rect x="4.5" y="3" width="15" height="18" rx="2.2"/><path d="M14.3 8.3c-.4-1.2-1.4-1.8-2.5-1.8-1.3 0-2.3.7-2.3 1.8 0 2.4 5 1.6 5 4.3 0 1-.8 1.6-1.7 1.8M9.7 15.7c.4 1.2 1.4 1.8 2.5 1.8 1.3 0 2.3-.7 2.3-1.8 0-2.4-5-1.6-5-4.3 0-1 .8-1.6 1.7-1.8"/></symbol>
+  <symbol id="i-skills" viewBox="0 0 24 24"><path d="M3 7.5V18a1.5 1.5 0 0 0 1.5 1.5h15A1.5 1.5 0 0 0 21 18V9a1.5 1.5 0 0 0-1.5-1.5H12L10 5H4.5A1.5 1.5 0 0 0 3 6.5z"/><path d="M13.2 9.6l-3.4 4.6h3l-1 3.4 3.4-4.7h-3z" fill="currentColor" stroke-width="1"/></symbol>
+  <symbol id="i-hooks" viewBox="0 0 24 24"><path d="M12 3l7.5 3v5.2c0 4.6-3.2 8.2-7.5 9.8-4.3-1.6-7.5-5.2-7.5-9.8V6z"/><path d="M12 7.5v8.5"/></symbol>
+  <symbol id="i-memory" viewBox="0 0 24 24"><path d="M5 4h14v10.5L13.5 20H5z"/><path d="M13.5 20v-5.5H19M8.5 8.5h7M8.5 11.5h4"/></symbol>
+  <symbol id="i-agent" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3.5"/><path d="M7.5 9.5l3 2.5-3 2.5M12.5 15.5h4"/></symbol>
+  <symbol id="i-you" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M5 20.5c0-4 3.1-6.6 7-6.6s7 2.6 7 6.6"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.5 8h7M8.5 11.5h7M8.5 15h4.5"/></symbol>
+  <symbol id="i-paper" viewBox="0 0 24 24"><path d="M6 3h8.5L19 7.5V21H6z"/><path d="M14.5 3v4.5H19M9 11h7M9 14h7M9 17h5"/></symbol>
+  <symbol id="i-deck" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="11.5" rx="1.5"/><path d="M12 15.5V18M8 21l4-3 4 3M8 12.5V10M11.5 12.5V8M15 12.5V9"/></symbol>
+  <symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M3 9.7h18M3 14.3h18M9 5v14M15 5v14"/></symbol>
+  <symbol id="i-brackets" viewBox="0 0 24 24"><path d="M8.5 7.5L4 12l4.5 4.5M15.5 7.5L20 12l-4.5 4.5M13.4 5.5l-2.8 13"/></symbol>
+  <symbol id="i-referee" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.3"/><path d="M15.2 15.2l5.3 5.3M7.7 10.7l1.9 1.9 3.4-3.6"/></symbol>
+  <symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 3v4.5M15 3v4.5M6.5 7.5h11v3.5a5.5 5.5 0 0 1-11 0zM12 16.5V21"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8.3 10.5V7.8a3.7 3.7 0 0 1 7.4 0v2.7"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M19.5 14.6A7.8 7.8 0 1 1 9.4 4.5a6.3 6.3 0 0 0 10.1 10.1z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></symbol>
+  <symbol id="i-battery" viewBox="0 0 24 24"><rect x="2.5" y="7.5" width="16.5" height="9" rx="2"/><path d="M21.5 10.5v3"/><rect x="5" y="10" width="3.2" height="4" rx=".6" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-laptop" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="10" rx="1.2"/><path d="M2.5 18.5h19"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5.5 21V3.8M5.5 4h12l-2.6 4 2.6 4h-12"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4"/><path d="M10.5 12.5L20 3M16.5 6.5L19 9M14 9l2 2"/></symbol>
+  <symbol id="i-tool" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 8.5h18M7 16.5l3-3.2 2.6 2 4.4-4.6"/></symbol>
+  <symbol id="i-archive" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="4.5" rx="1"/><path d="M5 9v10.5h14V9M10 13h4"/></symbol>
+  <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M3 13.5L5.8 5h12.4L21 13.5V19H3z"/><path d="M3 13.5h5l1.5 2.5h5l1.5-2.5h5"/></symbol>
+  <symbol id="i-dial" viewBox="0 0 24 24"><path d="M3.5 17.5a8.5 8.5 0 1 1 17 0"/><path d="M12 17.5l4.2-5.2"/><circle cx="12" cy="17.5" r="1.3" fill="currentColor"/></symbol>
+  <symbol id="i-no" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M6 6l12 12"/></symbol>
+  <symbol id="i-plan" viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5V3h6v1.5M8.3 10l1.4 1.4 2.3-2.4M13.5 10.5h3M8.3 15l1.4 1.4 2.3-2.4M13.5 15.5h3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-question" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.6 2.6 0 1 1 3.4 2.5c-.6.2-.9.7-.9 1.3v.7"/><circle cx="12" cy="17" r=".9" fill="currentColor"/></symbol>
+  <symbol id="i-desk" viewBox="0 0 24 24"><rect x="2.5" y="10" width="19" height="3" rx="1"/><path d="M5 13v7M19 13v7M7 10V5.5h5V10M13.5 10V4h4v6"/></symbol>
+  <symbol id="i-library" viewBox="0 0 24 24"><path d="M4 4.5h4v15H4zM9.5 4.5h4v15h-4zM15 5.6l3.6-1 3 14.4-3.6 1z"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.2 1.2M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.2-1.2"/></symbol>
+  <symbol id="i-loop" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4.5v4.6h-4.6"/></symbol>
+  <symbol id="i-sweep" viewBox="0 0 24 24"><path d="M4 6h9M4 9.5h9M4 13h9M15.5 9.5h4.5M18 7l2.5 2.5L18 12"/><rect x="4" y="16" width="16" height="4" rx="1"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18.5h10.5a4 4 0 0 0 .6-7.95A5.5 5.5 0 0 0 7.5 9.2 4.7 4.7 0 0 0 7 18.5z"/></symbol>
+  <symbol id="i-gate" viewBox="0 0 24 24"><path d="M3.5 4.5h17l-6.5 7.8v6.2l-4 2v-8.2z"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><path d="M3.5 6.5l5.5-2 6 2 5.5-2v13l-5.5 2-6-2-5.5 2z"/><path d="M9 4.5v13M15 6.5v13"/></symbol>
+  <symbol id="i-people" viewBox="0 0 24 24"><circle cx="8.5" cy="8.5" r="3"/><path d="M2.5 19.5c0-3.4 2.6-5.6 6-5.6s6 2.2 6 5.6"/><circle cx="16.5" cy="7.5" r="2.6"/><path d="M15.5 12.6c3.4-.4 6 1.6 6 4.9"/></symbol>
+  <symbol id="i-route" viewBox="0 0 24 24"><path d="M5 19L9.5 11 15 14.5 19.5 5"/><circle cx="5" cy="19" r="1.8"/><circle cx="19.5" cy="5" r="1.8"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M3.5 7.5L12 3.5l8.5 4v9L12 20.5l-8.5-4z"/><path d="M3.5 7.5L12 11.5l8.5-4M12 11.5v9"/></symbol>
+  <symbol id="i-start" viewBox="0 0 24 24"><path d="M5 12h12M13 7l5 5-5 5"/></symbol>
+  <symbol id="i-issue" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/></symbol>
+  <symbol id="i-closed" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M8 12.3l2.8 2.8L16.2 9.6"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h5l2 2.2h8A1.5 1.5 0 0 1 21 8.7V18a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18z"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8.5L19 7.5V21H6z"/><path d="M14.5 3v4.5H19"/></symbol>
+</svg>
+
+<header class="mast wrap">
+  <p class="kicker"><span class="plate"><svg class="hi" style="width:18px;height:18px;color:var(--paper)"><use href="#i-map"/></svg></span>AI research setup kit · the map</p>
+  <h1>How the research setup fits together</h1>
+  <p class="lede">An artificial intelligence (AI) agent that works across your <b>code</b>, your <b>data</b> and your <b>notes</b>, under rules you set. The whole kit on one map.</p>
+</header>
+
+<section class="wrap" aria-label="The whole setup on one map">
+<figure class="map">
+
+<!-- desktop map -->
+<svg class="dg map-d" viewBox="0 0 1240 890" role="img" aria-labelledby="hd-t">
+<title id="hd-t">The whole setup. A purple route runs from you to the agent at its desk, past the rules, the skills, the memory index, the connectors and what the session adds, on to the products and through the referee pass before anything leaves. Below, everything the agent writes crosses the guard band, where the hooks sit, into three roots: code with its issues, data with the other files of the work, and the notes vault.</title>
+<defs><marker id="hd-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 1L10 5L0 9z" class="fi"/></marker></defs>
+
+<rect x="16" y="410" width="1208" height="66" rx="10" class="band"/>
+
+<!-- you -->
+<text x="100" y="122" text-anchor="middle" class="there">YOU ARE HERE</text>
+<path d="M100 136L116 164H84Z" class="rstart"/>
+<circle cx="100" cy="224" r="44" class="bxi"/>
+<use href="#i-you" x="76" y="200" width="48" height="48" class="ico"/>
+<text x="100" y="294" text-anchor="middle" class="tn">You</text>
+<text x="100" y="313" text-anchor="middle" class="ts">decide</text>
+<text x="207" y="208" text-anchor="middle" class="ts">you ask</text>
+
+<!-- the desk -->
+<rect x="250" y="110" width="660" height="220" rx="18" class="desk"/>
+<text x="270" y="138" class="tcap">THE DESK</text>
+<rect x="270" y="176" width="96" height="96" rx="20" class="fi"/>
+<path d="M296 208l18 16-18 16M324 242h22" class="lnp"/>
+<text x="318" y="298" text-anchor="middle" class="tn">the agent</text>
+
+<rect x="396" y="146" width="150" height="60" rx="10" class="kr"/>
+<use href="#i-rules" x="410" y="152" width="22" height="22" class="ico cr"/>
+<text x="442" y="170" class="tn">Rules</text>
+<text x="410" y="193" class="ts">whole file</text>
+<rect x="562" y="146" width="150" height="60" rx="10" class="ks"/>
+<use href="#i-skills" x="576" y="152" width="22" height="22" class="ico cs"/>
+<text x="608" y="170" class="tn">Skills</text>
+<text x="576" y="193" class="ts">one line each</text>
+<rect x="728" y="146" width="150" height="60" rx="10" class="km"/>
+<use href="#i-memory" x="742" y="152" width="22" height="22" class="ico cm"/>
+<text x="774" y="170" class="tn">Memory</text>
+<text x="742" y="193" class="ts">its index</text>
+
+<rect x="396" y="242" width="150" height="60" rx="10" class="bx"/>
+<use href="#i-plug" x="410" y="248" width="22" height="22" class="ico cmu"/>
+<text x="442" y="266" class="tn">Connectors</text>
+<text x="410" y="289" class="ts">tools per service</text>
+<rect x="562" y="242" width="316" height="60" rx="10" class="dash"/>
+<text x="576" y="266" class="tn">What the session adds</text>
+<text x="576" y="289" class="ts">your words, files it opens, answers</text>
+
+<!-- products, referee, out -->
+<rect x="960" y="110" width="160" height="220" rx="14" class="bxi"/>
+<text x="976" y="138" class="tcap">PRODUCTS</text>
+<use href="#i-note" x="976" y="152" width="22" height="22" class="ico"/><text x="1006" y="168" class="tsi">notes</text>
+<use href="#i-paper" x="976" y="182" width="22" height="22" class="ico"/><text x="1006" y="198" class="tsi">papers</text>
+<use href="#i-deck" x="976" y="212" width="22" height="22" class="ico"/><text x="1006" y="228" class="tsi">slides</text>
+<use href="#i-table" x="976" y="242" width="22" height="22" class="ico"/><text x="1006" y="258" class="tsi">figures, tables</text>
+<use href="#i-brackets" x="976" y="272" width="22" height="22" class="ico"/><text x="1006" y="288" class="tsi">code</text>
+
+<rect x="1136" y="110" width="28" height="220" rx="14" class="gate"/>
+<use href="#i-referee" x="1138" y="164" width="24" height="24" class="ico"/>
+<text x="1150" y="98" text-anchor="middle" class="tb">referee</text>
+<circle cx="1214" cy="224" r="12" class="rring"/>
+<circle cx="1214" cy="224" r="6" class="rfin"/>
+<text x="1214" y="258" text-anchor="middle" class="ts">leaves</text>
+
+<!-- reads and writes -->
+<path d="M580 336V384" class="ln" marker-start="url(#hd-a)"/>
+<path d="M210 384H1030" class="ln"/>
+<path d="M210 384V500" class="ln" marker-end="url(#hd-a)"/>
+<path d="M620 384V500" class="ln" marker-end="url(#hd-a)"/>
+<path d="M1030 384V500" class="ln" marker-end="url(#hd-a)"/>
+<text x="592" y="366" class="ts">reads and writes</text>
+
+<!-- the guard -->
+<text x="32" y="438" class="tcap" style="fill:var(--hooks)">THE GUARD</text>
+<text x="32" y="458" class="ts">every write crosses it</text>
+<circle cx="210" cy="443" r="7" class="ck"/>
+<circle cx="620" cy="443" r="7" class="ck"/>
+<circle cx="1030" cy="443" r="7" class="ck"/>
+<rect x="262" y="416" width="318" height="56" rx="10" class="kh"/>
+<use href="#i-hooks" x="276" y="424" width="20" height="20" class="ico ch"/>
+<text x="304" y="440"><tspan class="tn">Hooks</tspan><tspan class="ts" dx="8">run before each action</tspan></text>
+<text x="276" y="462" class="tx"><tspan class="tb hx">deny</tspan> originals · <tspan class="tb hx">ask</tspan> outside · <tspan class="tb hx">pass</tspan> the rest</text>
+
+<!-- code, with its issues -->
+<rect x="30" y="506" width="360" height="312" rx="16" class="bxi"/>
+<rect x="48" y="524" width="44" height="44" rx="11" class="fsoft"/>
+<use href="#i-code" x="57" y="533" width="26" height="26" class="ico"/>
+<text x="106" y="548" class="th">Code</text>
+<text x="106" y="567" class="ts">git repositories and their issues</text>
+<path d="M58 606H362" class="pic"/>
+<path d="M136 606C156 606 160 586 180 586H222C242 586 246 606 266 606" class="pic"/>
+<circle cx="76" cy="606" r="5.5" class="dot"/><circle cx="136" cy="606" r="5.5" class="dot"/><circle cx="201" cy="606" r="5.5" class="dot"/><circle cx="266" cy="606" r="5.5" class="dot"/><circle cx="340" cy="606" r="5.5" class="dot"/><circle cx="201" cy="586" r="5.5" class="dot"/>
+<rect x="58" y="626" width="128" height="26" rx="13" class="pl"/><text x="122" y="643" text-anchor="middle" class="txi">scripts, analysis</text>
+<rect x="196" y="626" width="134" height="26" rx="13" class="pl"/><text x="263" y="643" text-anchor="middle" class="txi">the agent's setup</text>
+<rect x="48" y="666" width="324" height="134" rx="12" class="bx"/>
+<use href="#i-issue" x="62" y="676" width="18" height="18" class="ico"/>
+<text x="88" y="690" class="tb">Issues</text>
+<text x="146" y="690" class="ts">decisions and work</text>
+<rect x="62" y="716" width="58" height="26" rx="13" class="pl"/><text x="91" y="733" text-anchor="middle" class="tb" style="font-size:12.5px">map</text>
+<path d="M122 729L158 715M122 729L158 745M122 729L158 775" class="ln"/>
+<rect x="160" y="702" width="198" height="26" rx="6" class="pll"/><use href="#i-issue" x="168" y="708" width="14" height="14" class="ico"/><text x="190" y="720" class="txi">an open decision</text>
+<rect x="160" y="732" width="198" height="26" rx="6" class="pll"/><use href="#i-closed" x="168" y="738" width="14" height="14" class="ico cs"/><text x="190" y="750" class="txi">closed: what, when, why</text>
+<rect x="160" y="762" width="198" height="26" rx="6" class="pll"/><use href="#i-issue" x="168" y="768" width="14" height="14" class="ico"/><text x="190" y="780" class="txi">a piece of work</text>
+
+<!-- data, and the rest of the work -->
+<rect x="410" y="506" width="420" height="312" rx="16" class="bxi"/>
+<rect x="428" y="524" width="44" height="44" rx="11" class="fsoft"/>
+<use href="#i-data" x="437" y="533" width="26" height="26" class="ico"/>
+<text x="486" y="548" class="th">Data</text>
+<text x="486" y="567" class="ts">the institution's drive</text>
+<rect x="428" y="594" width="94" height="40" rx="8" class="pl"/>
+<text x="442" y="619" class="tb">raw</text>
+<use href="#i-lock" x="494" y="605" width="18" height="18" class="ico"/>
+<path d="M524 614H541" class="ln" marker-end="url(#hd-a)"/>
+<rect x="544" y="594" width="116" height="40" rx="8" class="pl"/>
+<text x="558" y="619" class="tb">processed</text>
+<path d="M662 614H679" class="ln" marker-end="url(#hd-a)"/>
+<rect x="682" y="594" width="110" height="40" rx="8" class="pl"/>
+<text x="696" y="619" class="tb">outputs</text>
+<text x="428" y="654" class="tx">as received</text>
+<text x="544" y="654" class="tx">made by code</text>
+<text x="682" y="654" class="tx">figures, tables</text>
+<text x="428" y="712" class="tcap">AND THE REST OF THE WORK</text>
+<rect x="428" y="726" width="100" height="30" rx="15" class="pl"/><use href="#i-deck" x="440" y="733" width="16" height="16" class="ico"/><text x="464" y="746" class="txi">slides</text>
+<rect x="536" y="726" width="124" height="30" rx="15" class="pl"/><use href="#i-paper" x="548" y="733" width="16" height="16" class="ico"/><text x="572" y="746" class="txi">documents</text>
+<rect x="668" y="726" width="124" height="30" rx="15" class="pl"/><use href="#i-note" x="680" y="733" width="16" height="16" class="ico"/><text x="704" y="746" class="txi">transcripts</text>
+
+<!-- knowledge -->
+<rect x="850" y="506" width="360" height="312" rx="16" class="bxi"/>
+<rect x="868" y="524" width="44" height="44" rx="11" class="fsoft"/>
+<use href="#i-know" x="877" y="533" width="26" height="26" class="ico"/>
+<text x="926" y="548" class="th">Knowledge</text>
+<text x="926" y="567" class="ts">a notes vault</text>
+<rect x="868" y="594" width="156" height="30" rx="7" class="dash"/><text x="880" y="614">inbox</text>
+<rect x="1036" y="594" width="156" height="30" rx="7" class="pl"/><text x="1048" y="614">literature cards</text>
+<rect x="868" y="634" width="156" height="30" rx="7" class="pl"/><text x="880" y="654">meeting notes</text>
+<rect x="1036" y="634" width="156" height="30" rx="7" class="pl"/><text x="1048" y="654">daily log</text>
+<rect x="868" y="674" width="156" height="30" rx="7" class="pl"/><text x="880" y="694">wiki</text>
+<rect x="1036" y="674" width="156" height="30" rx="7" class="pl"/><text x="1048" y="694">agent outputs</text>
+<text x="868" y="736" class="ts">linked notes; you and the agent both write</text>
+
+<!-- the roots meet by links -->
+<path d="M320 821C320 858 470 858 470 824" class="ln" marker-end="url(#hd-a)"/>
+<text x="395" y="878" text-anchor="middle" class="ts">a script reads the data</text>
+<path d="M900 821C900 858 740 858 740 824" class="lnd" marker-end="url(#hd-a)"/>
+<text x="820" y="878" text-anchor="middle" class="ts">a note links to the figure</text>
+
+<!-- the route, overprinted last -->
+<path d="M148 224H266M370 224H956M1124 224H1202" class="route"/>
+</svg>
+
+<!-- phone map -->
+<svg class="dg map-p" viewBox="0 0 400 1812" role="img" aria-labelledby="hp-t">
+<title id="hp-t">The whole setup, top to bottom. A purple route runs from you to the agent at its desk, then to the products and through the referee pass before anything leaves. Everything the agent writes crosses the guard band, where the hooks sit, into three roots: code with its issues, data with the other files of the work, and the notes vault.</title>
+<defs><marker id="hp-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 1L10 5L0 9z" class="fi"/></marker></defs>
+<rect x="8" y="818" width="384" height="96" rx="10" class="band"/>
+
+<text x="200" y="18" text-anchor="middle" class="there">YOU ARE HERE</text>
+<path d="M200 30L214 54H186Z" class="rstart"/>
+<circle cx="200" cy="96" r="34" class="bxi"/>
+<use href="#i-you" x="181" y="77" width="38" height="38" class="ico"/>
+<text x="248" y="92" class="tn">You</text>
+<text x="248" y="111" class="ts">decide</text>
+<text x="212" y="166" class="ts">you ask</text>
+
+<rect x="12" y="184" width="376" height="340" rx="16" class="desk"/>
+<text x="28" y="210" class="tcap">THE DESK</text>
+<rect x="156" y="200" width="88" height="88" rx="18" class="fi"/>
+<path d="M180 230l16 14-16 14M206 262h20" class="lnp"/>
+<text x="200" y="310" text-anchor="middle" class="tn">the agent</text>
+<rect x="28" y="328" width="164" height="58" rx="10" class="kr"/>
+<use href="#i-rules" x="40" y="334" width="20" height="20" class="ico cr"/>
+<text x="68" y="350" class="tn">Rules</text>
+<text x="40" y="374" class="ts">whole file</text>
+<rect x="208" y="328" width="164" height="58" rx="10" class="ks"/>
+<use href="#i-skills" x="220" y="334" width="20" height="20" class="ico cs"/>
+<text x="248" y="350" class="tn">Skills</text>
+<text x="220" y="374" class="ts">one line each</text>
+<rect x="28" y="396" width="164" height="58" rx="10" class="km"/>
+<use href="#i-memory" x="40" y="402" width="20" height="20" class="ico cm"/>
+<text x="68" y="418" class="tn">Memory</text>
+<text x="40" y="442" class="ts">its index</text>
+<rect x="208" y="396" width="164" height="58" rx="10" class="bx"/>
+<use href="#i-plug" x="220" y="402" width="20" height="20" class="ico cmu"/>
+<text x="248" y="418" class="tn">Connectors</text>
+<text x="220" y="442" class="ts">tools per service</text>
+<rect x="28" y="464" width="344" height="48" rx="10" class="dash"/>
+<text x="40" y="484" class="tn">What the session adds</text>
+<text x="40" y="503" class="ts">your words, files it opens, answers</text>
+
+<rect x="44" y="562" width="312" height="128" rx="14" class="bxi"/>
+<text x="60" y="588" class="tcap">PRODUCTS</text>
+<use href="#i-note" x="60" y="600" width="20" height="20" class="ico"/><text x="88" y="615" class="tsi">notes</text>
+<use href="#i-paper" x="60" y="628" width="20" height="20" class="ico"/><text x="88" y="643" class="tsi">papers</text>
+<use href="#i-deck" x="60" y="656" width="20" height="20" class="ico"/><text x="88" y="671" class="tsi">slides</text>
+<use href="#i-table" x="208" y="600" width="20" height="20" class="ico"/><text x="236" y="615" class="tsi">figures, tables</text>
+<use href="#i-brackets" x="208" y="628" width="20" height="20" class="ico"/><text x="236" y="643" class="tsi">code</text>
+<rect x="130" y="712" width="140" height="28" rx="14" class="gate"/>
+<use href="#i-referee" x="142" y="714" width="24" height="24" class="ico"/>
+<text x="282" y="731" class="tb">referee</text>
+<circle cx="200" cy="790" r="12" class="rring"/>
+<circle cx="200" cy="790" r="6" class="rfin"/>
+<text x="220" y="795" class="ts">leaves</text>
+
+<path d="M26 528V1608" class="ln" marker-start="url(#hp-a)"/>
+<text x="38" y="552" class="ts">reads and writes</text>
+<text x="40" y="838" class="tcap" style="fill:var(--hooks)">THE GUARD</text>
+<text x="126" y="838" class="ts">every write crosses it</text>
+<circle cx="26" cy="866" r="7" class="ck"/>
+<rect x="40" y="848" width="348" height="58" rx="10" class="kh"/>
+<use href="#i-hooks" x="52" y="856" width="20" height="20" class="ico ch"/>
+<text x="80" y="871"><tspan class="tn">Hooks</tspan><tspan class="ts" dx="8">run before each action</tspan></text>
+<text x="52" y="894" class="tx"><tspan class="tb hx">deny</tspan> originals · <tspan class="tb hx">ask</tspan> outside · <tspan class="tb hx">pass</tspan> the rest</text>
+
+<path d="M26 976H39" class="ln" marker-end="url(#hp-a)"/>
+<rect x="44" y="940" width="344" height="304" rx="14" class="bxi"/>
+<rect x="60" y="956" width="40" height="40" rx="10" class="fsoft"/>
+<use href="#i-code" x="68" y="964" width="24" height="24" class="ico"/>
+<text x="114" y="978" class="th" style="font-size:21px">Code</text>
+<text x="114" y="996" class="ts">git repositories and their issues</text>
+<path d="M70 1036H364" class="pic"/>
+<path d="M140 1036C160 1036 164 1016 184 1016H226C246 1016 250 1036 270 1036" class="pic"/>
+<circle cx="90" cy="1036" r="5" class="dot"/><circle cx="140" cy="1036" r="5" class="dot"/><circle cx="205" cy="1036" r="5" class="dot"/><circle cx="270" cy="1036" r="5" class="dot"/><circle cx="340" cy="1036" r="5" class="dot"/><circle cx="205" cy="1016" r="5" class="dot"/>
+<rect x="60" y="1058" width="124" height="26" rx="13" class="pl"/><text x="122" y="1075" text-anchor="middle" class="txi">scripts, analysis</text>
+<rect x="194" y="1058" width="134" height="26" rx="13" class="pl"/><text x="261" y="1075" text-anchor="middle" class="txi">the agent's setup</text>
+<rect x="60" y="1098" width="312" height="132" rx="12" class="bx"/>
+<use href="#i-issue" x="72" y="1108" width="18" height="18" class="ico"/>
+<text x="98" y="1122" class="tb">Issues</text>
+<text x="156" y="1122" class="ts">decisions and work</text>
+<rect x="72" y="1150" width="52" height="26" rx="13" class="pl"/><text x="98" y="1167" text-anchor="middle" class="tb" style="font-size:12.5px">map</text>
+<path d="M126 1163L158 1149M126 1163L158 1179M126 1163L158 1209" class="ln"/>
+<rect x="160" y="1136" width="200" height="26" rx="6" class="pll"/><use href="#i-issue" x="168" y="1142" width="14" height="14" class="ico"/><text x="190" y="1154" class="txi">an open decision</text>
+<rect x="160" y="1166" width="200" height="26" rx="6" class="pll"/><use href="#i-closed" x="168" y="1172" width="14" height="14" class="ico cs"/><text x="190" y="1184" class="txi">closed: what, when, why</text>
+<rect x="160" y="1196" width="200" height="26" rx="6" class="pll"/><use href="#i-issue" x="168" y="1202" width="14" height="14" class="ico"/><text x="190" y="1214" class="txi">a piece of work</text>
+
+<path d="M26 1300H39" class="ln" marker-end="url(#hp-a)"/>
+<rect x="44" y="1264" width="344" height="288" rx="14" class="bxi"/>
+<rect x="60" y="1280" width="40" height="40" rx="10" class="fsoft"/>
+<use href="#i-data" x="68" y="1288" width="24" height="24" class="ico"/>
+<text x="114" y="1302" class="th" style="font-size:21px">Data</text>
+<text x="114" y="1320" class="ts">the institution's drive</text>
+<rect x="60" y="1338" width="312" height="30" rx="8" class="pl"/>
+<text x="74" y="1358" class="tb">raw</text><text x="160" y="1358" class="ts">as received</text>
+<use href="#i-lock" x="346" y="1344" width="18" height="18" class="ico"/>
+<path d="M110 1370V1385" class="ln" marker-end="url(#hp-a)"/>
+<rect x="60" y="1388" width="312" height="30" rx="8" class="pl"/>
+<text x="74" y="1408" class="tb">processed</text><text x="160" y="1408" class="ts">made by code</text>
+<path d="M110 1420V1435" class="ln" marker-end="url(#hp-a)"/>
+<rect x="60" y="1438" width="312" height="30" rx="8" class="pl"/>
+<text x="74" y="1458" class="tb">outputs</text><text x="160" y="1458" class="ts">figures, tables</text>
+<text x="60" y="1494" class="tcap">AND THE REST OF THE WORK</text>
+<rect x="60" y="1506" width="74" height="28" rx="14" class="pl"/><use href="#i-deck" x="68" y="1512" width="16" height="16" class="ico"/><text x="90" y="1524" class="txi">slides</text>
+<rect x="140" y="1506" width="110" height="28" rx="14" class="pl"/><use href="#i-paper" x="148" y="1512" width="16" height="16" class="ico"/><text x="170" y="1524" class="txi">documents</text>
+<rect x="256" y="1506" width="116" height="28" rx="14" class="pl"/><use href="#i-note" x="264" y="1512" width="16" height="16" class="ico"/><text x="286" y="1524" class="txi">transcripts</text>
+
+<path d="M26 1608H39" class="ln" marker-end="url(#hp-a)"/>
+<rect x="44" y="1572" width="344" height="196" rx="14" class="bxi"/>
+<rect x="60" y="1588" width="40" height="40" rx="10" class="fsoft"/>
+<use href="#i-know" x="68" y="1596" width="24" height="24" class="ico"/>
+<text x="114" y="1610" class="th" style="font-size:21px">Knowledge</text>
+<text x="114" y="1628" class="ts">a notes vault</text>
+<rect x="60" y="1646" width="148" height="30" rx="7" class="dash"/><text x="72" y="1666">inbox</text>
+<rect x="224" y="1646" width="148" height="30" rx="7" class="pl"/><text x="236" y="1666">literature cards</text>
+<rect x="60" y="1684" width="148" height="30" rx="7" class="pl"/><text x="72" y="1704">meeting notes</text>
+<rect x="224" y="1684" width="148" height="30" rx="7" class="pl"/><text x="236" y="1704">daily log</text>
+<rect x="60" y="1722" width="148" height="30" rx="7" class="pl"/><text x="72" y="1742">wiki</text>
+<rect x="224" y="1722" width="148" height="30" rx="7" class="pl"/><text x="236" y="1742">agent outputs</text>
+<text x="200" y="1798" text-anchor="middle" class="ts">the roots meet by links, never by copies</text>
+
+<path d="M200 134V196M200 528V558M200 694V778" class="route"/>
+</svg>
+
+<figcaption>Start where it says you are here and follow the purple route. Thick outlines are places, thin arrows are connections, and the blue band is the guard that every write crosses.</figcaption>
+</figure>
+
+<div class="legend" aria-label="Symbols used on this page">
+  <div class="lg"><span class="lg-h">Places</span>
+    <span class="lg-i"><svg class="hi"><use href="#i-code"/></svg>Code</span>
+    <span class="lg-i"><svg class="hi"><use href="#i-data"/></svg>Data</span>
+    <span class="lg-i"><svg class="hi"><use href="#i-know"/></svg>Knowledge</span>
+    <span class="lg-i"><svg class="hi"><use href="#i-issue"/></svg>Issues</span></div>
+  <div class="lg"><span class="lg-h">Instructions</span>
+    <span class="lg-i"><svg class="hi cr"><use href="#i-rules"/></svg>Rules</span>
+    <span class="lg-i"><svg class="hi cs"><use href="#i-skills"/></svg>Skills</span>
+    <span class="lg-i"><svg class="hi ch"><use href="#i-hooks"/></svg>Hooks</span>
+    <span class="lg-i"><svg class="hi cm"><use href="#i-memory"/></svg>Memory</span></div>
+  <div class="lg"><span class="lg-h">Who</span>
+    <span class="lg-i"><svg class="hi"><use href="#i-you"/></svg>You</span>
+    <span class="lg-i"><svg class="hi"><use href="#i-agent"/></svg>The agent</span></div>
+  <div class="lg"><span class="lg-h">Out</span>
+    <span class="lg-i"><svg class="hi"><use href="#i-paper"/></svg>Products</span>
+    <span class="lg-i"><svg class="hi"><use href="#i-referee"/></svg>Referee pass</span></div>
+  <div class="lg"><span class="lg-h">Lines</span>
+    <span class="lg-i"><svg class="sw" viewBox="0 0 30 16"><rect x="2" y="2" width="26" height="12" rx="3" style="fill:none;stroke:var(--ink);stroke-width:2.5"/></svg>a place</span>
+    <span class="lg-i"><svg class="sw" viewBox="0 0 30 16"><path d="M2 8H24" style="fill:none;stroke:var(--ink);stroke-width:1.25"/><path d="M22 4.5L28 8L22 11.5z" style="fill:var(--ink)"/></svg>a connection</span>
+    <span class="lg-i"><svg class="sw" viewBox="0 0 30 16"><path d="M1 8H29" style="fill:none;stroke:var(--route);stroke-width:4.5;stroke-opacity:.85"/></svg>a route</span>
+    <span class="lg-i"><svg class="sw" viewBox="0 0 30 16"><rect x="1" y="2" width="28" height="12" rx="3" style="fill:var(--hooks-t)"/></svg>the guard</span>
+    <span class="lg-i"><svg class="mk-mini" viewBox="0 0 40 40"><path d="M20 6L35 32H5Z" class="mk-tri"/></svg>start</span>
+    <span class="lg-i"><span class="mini-fin"></span>finish</span></div>
+</div>
+
+<nav class="index" aria-label="Stations on this page">
+  <a href="#routes"><span class="pl"><svg class="hi"><use href="#i-route"/></svg></span>Four routes</a>
+  <a href="#roots"><span class="pl"><svg class="hi"><use href="#i-data"/></svg></span>Three roots</a>
+  <a href="#desk"><span class="pl"><svg class="hi"><use href="#i-desk"/></svg></span>The desk and the folder</a>
+  <a href="#instructions"><span class="pl"><svg class="hi"><use href="#i-rules"/></svg></span>Four kinds of instruction</a>
+  <a href="#vault"><span class="pl"><svg class="hi"><use href="#i-know"/></svg></span>The vault</a>
+  <a href="#literature"><span class="pl"><svg class="hi"><use href="#i-key"/></svg></span>Literature</a>
+  <a href="#products"><span class="pl"><svg class="hi"><use href="#i-referee"/></svg></span>Products</a>
+  <a href="#issues"><span class="pl"><svg class="hi"><use href="#i-issue"/></svg></span>Decisions as issues</a>
+  <a href="#people"><span class="pl"><svg class="hi"><use href="#i-people"/></svg></span>Several people</a>
+  <a href="#night"><span class="pl"><svg class="hi"><use href="#i-moon"/></svg></span>Night shift</a>
+  <a href="#models"><span class="pl"><svg class="hi"><use href="#i-dial"/></svg></span>Which model</a>
+  <a href="#kit"><span class="pl"><svg class="hi"><use href="#i-box"/></svg></span>What is in the kit</a>
+</nav>
+</section>
+
+<!-- ROUTES -->
+<section class="band wrap" id="routes">
+  <div class="band-head">
+    <span class="plate"><svg class="hi"><use href="#i-route"/></svg></span>
+    <div><p class="eyebrow">Four routes across the map</p>
+      <h2>What happens, start to finish</h2>
+      <div class="route-key" aria-hidden="true">
+        <span><svg class="mk-mini" viewBox="0 0 40 40"><path d="M20 6L35 32H5Z" class="mk-tri"/></svg>start</span>
+        <span><span class="mini-ctl"></span>a step, named by its place on the map</span>
+        <span><span class="mini-fin"></span>finish</span>
+      </div></div>
+  </div>
+
+  <article class="route">
+    <h3><svg class="hi"><use href="#i-question"/></svg>A question goes in</h3>
+    <ol class="course" style="--n:6">
+      <li class="ctl start"><span class="mark" aria-label="start"><svg viewBox="0 0 40 40"><path d="M20 6L35 32H5Z" class="mk-tri"/></svg></span>
+        <div class="body"><span class="where"><svg class="hi"><use href="#i-you"/></svg>You</span><p>you ask</p></div></li>
+      <li class="ctl"><span class="mark">1</span>
+        <div class="body"><span class="where"><svg class="hi"><use href="#i-desk"/></svg>The desk</span><p>rules and memory already read</p></div></li>
+      <li class="ctl"><span class="mark">2</span>
+        <div class="body"><span class="where"><svg class="hi cs"><use href="#i-skills"/></svg>Skills</span><p>a matching skill loads</p></div></li>
+      <li class="ctl"><span class="mark">3</span>
+        <div class="body"><span class="where"><svg class="hi"><use href="#i-know"/></svg>Knowledge</span><p>the notes; the paper if it matters</p></div></li>
+      <li class="ctl"><span class="mark">4</span>
+        <div class="body"><span class="where"><svg class="hi"><use href="#i-code"/></svg>Code on data</span><p>a script, not the raw files</p></div></li>
+      <li class="ctl finish"><span class="mark" aria-label="finish"></span>
+        <div class="body"><span class="where"><svg class="hi"><use href="#i-know"/></svg>Knowledge</span><p>an answer, or a dated note</p></div></li>
+    </ol>
+  </article>
+
+  <article class="route">
+    <h3><svg class="hi"><use href="#i-inbox"/></svg>A source arrives</h3>
+    <ol class="course" style="--n:5">
+      <li class="ctl start"><span class="mark" aria-label="start"><svg viewBox="0 0 40 40"><path d="M20 6L35 32H5Z" class="mk-tri"/></svg></span>
+        <div class="body"><span class="where"><svg class="hi"><use href="#i-inbox"/></svg>Arrives</span><p>data, transcript, paper, clipping</p></div></li>
+      <li class="ctl"><span class="mark">1</span>
+        <div class="body"><span class="where"><svg class="hi ch"><use href="#i-hooks"/></svg>Kept as it came</span><p>the guard refuses later edits</p></div></li>
+      <li class="ctl"><span class="mark">2</span>
+        <div class="body"><span class="where"><svg class="hi"><use href="#i-code"/></svg>Processed</span><p>a script, or a note made from it</p></div></li>
+      <li class="ctl"><span class="mark">3</span>
+        <div class="body"><span class="where"><svg class="hi"><use href="#i-know"/></svg>Linked</span><p>to its source and its projects</p></div></li>
+      <li class="ctl finish"><span class="mark" aria-label="finish"></span>
+        <div class="body"><span class="where"><svg class="hi"><use href="#i-check"/></svg>Cited</span><p>the note, never the raw capture</p></div></li>
+    </ol>
+  </article>
+
+  <article class="route">
+    <h3><svg class="hi"><use href="#i-loop"/></svg>A correction lands where it belongs</h3>
+    <ol class="course" style="--n:6">
+      <li class="ctl start"><span class="mark" aria-label="start"><svg viewBox="0 0 40 40"><path d="M20 6L35 32H5Z" class="mk-tri"/></svg></span>
+        <div class="body"><span class="where"><svg class="hi"><use href="#i-you"/></svg>You</span><p>"from now on ..."</p></div></li>
+      <li class="ctl"><span class="mark">1</span>
+        <div class="body"><span class="where"><svg class="hi cs"><use href="#i-skills"/></svg>The learn skill</span><p>one line, with what went wrong</p></div></li>
+      <li class="ctl"><span class="mark">2</span>
+        <div class="body"><span class="where"><svg class="hi cr"><use href="#i-rules"/></svg>Looks first</span><p>an existing rule changes; no copy</p></div></li>
+      <li class="ctl"><span class="mark">3</span>
+        <div class="body"><span class="where"><svg class="hi ch"><use href="#i-hooks"/></svg>Picks the place</span><p>hook, skill, rule or memory</p></div></li>
+      <li class="ctl"><span class="mark">4</span>
+        <div class="body"><span class="where"><svg class="hi"><use href="#i-note"/></svg>Changelog</span><p>the story, with its date</p></div></li>
+      <li class="ctl finish"><span class="mark" aria-label="finish"></span>
+        <div class="body"><span class="where"><svg class="hi"><use href="#i-desk"/></svg>Every session</span><p>starts with it</p></div></li>
+    </ol>
+  </article>
+
+  <article class="route">
+    <h3><svg class="hi"><use href="#i-moon"/></svg>The job runs overnight, or while you are gone</h3>
+    <ol class="course" style="--n:6">
+      <li class="ctl start"><span class="mark" aria-label="start"><svg viewBox="0 0 40 40"><path d="M20 6L35 32H5Z" class="mk-tri"/></svg></span>
+        <div class="body"><span class="where"><svg class="hi"><use href="#i-plan"/></svg>The plan</span><p>names every folder it writes to</p></div></li>
+      <li class="ctl"><span class="mark">1</span>
+        <div class="body"><span class="where"><svg class="hi"><use href="#i-key"/></svg>A grant</span><p>those folders, with an expiry</p></div></li>
+      <li class="ctl"><span class="mark">2</span>
+        <div class="body"><span class="where"><svg class="hi"><use href="#i-laptop"/></svg>Keep-awake</span><p>no sleep, battery watched</p></div></li>
+      <li class="ctl"><span class="mark">3</span>
+        <div class="body"><span class="where"><svg class="hi"><use href="#i-code"/></svg>The work</span><p>a commit per unit, own branch</p></div></li>
+      <li class="ctl"><span class="mark">4</span>
+        <div class="body"><span class="where"><svg class="hi ch"><use href="#i-hooks"/></svg>The guard</span><p>pauses at 20 % battery</p></div></li>
+      <li class="ctl finish"><span class="mark" aria-label="finish"></span>
+        <div class="body"><span class="where"><svg class="hi"><use href="#i-sun"/></svg>Morning</span><p>a report you read in two minutes</p></div></li>
+    </ol>
+  </article>
+</section>
+
+<!-- 1 ROOTS -->
+<section class="band wrap" id="roots">
+  <div class="band-head">
+    <span class="plate multi"><svg class="hi"><use href="#i-code"/></svg><svg class="hi"><use href="#i-data"/></svg><svg class="hi"><use href="#i-know"/></svg></span>
+    <div><p class="eyebrow">Guide 01</p><h2>Three roots, never mixed</h2></div>
+  </div>
+  <div class="st-body">
+    <figure class="fig">
+<svg class="dg" viewBox="0 0 440 456" role="img" aria-labelledby="s1-t">
+<title id="s1-t">Three roots side by side with what each holds: code with its issues, data in every stage with the other files of the work, and notes. A script in the code root runs on the data; a note links to a figure in the data root. Below, three mixes crossed out, each with its cost.</title>
+<defs><marker id="s1-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 1L10 5L0 9z" class="fi"/></marker></defs>
+<rect x="8" y="8" width="134" height="230" rx="12" class="bxi"/>
+<rect x="53" y="22" width="44" height="44" rx="10" class="fsoft"/><use href="#i-code" x="63" y="32" width="24" height="24" class="ico"/>
+<text x="75" y="90" text-anchor="middle" class="th2">Code</text>
+<text x="75" y="108" text-anchor="middle" class="tx">git, own disk</text>
+<circle cx="25" cy="134" r="2.5" class="fi"/><text x="34" y="138" class="txi">scripts</text>
+<circle cx="25" cy="156" r="2.5" class="fi"/><text x="34" y="160" class="txi">LaTeX papers</text>
+<circle cx="25" cy="178" r="2.5" class="fi"/><text x="34" y="182" class="txi">the setup</text>
+<use href="#i-issue" x="19" y="194" width="13" height="13" class="ico"/><text x="38" y="204" class="txi">issues</text>
+
+<rect x="153" y="8" width="134" height="230" rx="12" class="bxi"/>
+<rect x="198" y="22" width="44" height="44" rx="10" class="fsoft"/><use href="#i-data" x="208" y="32" width="24" height="24" class="ico"/>
+<text x="220" y="90" text-anchor="middle" class="th2">Data</text>
+<text x="220" y="108" text-anchor="middle" class="tx">institution's drive</text>
+<circle cx="170" cy="134" r="2.5" class="fi"/><text x="179" y="138" class="txi">raw data</text>
+<circle cx="170" cy="156" r="2.5" class="fi"/><text x="179" y="160" class="txi">processed data</text>
+<circle cx="170" cy="178" r="2.5" class="fi"/><text x="179" y="182" class="txi">outputs, figures</text>
+<circle cx="170" cy="200" r="2.5" class="fi"/><text x="179" y="204" class="txi">slides</text>
+<circle cx="170" cy="222" r="2.5" class="fi"/><text x="179" y="226" class="txi">documents</text>
+
+<rect x="298" y="8" width="134" height="230" rx="12" class="bxi"/>
+<rect x="343" y="22" width="44" height="44" rx="10" class="fsoft"/><use href="#i-know" x="353" y="32" width="24" height="24" class="ico"/>
+<text x="365" y="90" text-anchor="middle" class="th2">Knowledge</text>
+<text x="365" y="108" text-anchor="middle" class="tx">notes vault</text>
+<circle cx="315" cy="134" r="2.5" class="fi"/><text x="324" y="138" class="txi">meeting notes</text>
+<circle cx="315" cy="156" r="2.5" class="fi"/><text x="324" y="160" class="txi">literature cards</text>
+<circle cx="315" cy="178" r="2.5" class="fi"/><text x="324" y="182" class="txi">the daily log</text>
+<circle cx="315" cy="200" r="2.5" class="fi"/><text x="324" y="204" class="txi">plans, decisions</text>
+
+<path d="M80 242C80 280 205 280 205 246" class="ln" marker-end="url(#s1-a)"/>
+<text x="140" y="298" text-anchor="middle" class="tx">a script runs on data</text>
+<path d="M360 242C360 280 235 280 235 246" class="lnd" marker-end="url(#s1-a)"/>
+<text x="300" y="298" text-anchor="middle" class="tx">a note links to the figure</text>
+
+<text x="8" y="340" class="tcap">NEVER MIXED, BECAUSE</text>
+<use href="#i-data" x="8" y="352" width="22" height="22" class="ico"/>
+<path d="M36 363H74" class="lnm" marker-end="url(#s1-a)"/><path d="M50 357l10 12M60 357l-10 12" class="lnx"/>
+<use href="#i-code" x="82" y="352" width="22" height="22" class="ico"/>
+<text x="116" y="368" class="tsi">data in git: git never forgets</text>
+<use href="#i-code" x="8" y="388" width="22" height="22" class="ico"/>
+<path d="M36 399H74" class="lnm" marker-end="url(#s1-a)"/><path d="M50 393l10 12M60 393l-10 12" class="lnx"/>
+<use href="#i-data" x="82" y="388" width="22" height="22" class="ico"/>
+<text x="116" y="404" class="tsi">git on the synced drive: they clash</text>
+<use href="#i-data" x="8" y="424" width="22" height="22" class="ico"/>
+<path d="M36 435H74" class="lnm" marker-end="url(#s1-a)"/><path d="M50 429l10 12M60 429l-10 12" class="lnx"/>
+<use href="#i-know" x="82" y="424" width="22" height="22" class="ico"/>
+<text x="116" y="440" class="tsi">tables pasted into notes: a slow vault</text>
+</svg>
+      <figcaption>The roots meet by links, never by copies.</figcaption>
+    </figure>
+    <div class="txt">
+      <p>Three top folders, one kind of thing each. <b>Code</b> in git on your own disk, where every change is kept. <b>Data</b> and the other files of the work (figures, slides, documents, transcripts) on the institution's backed-up drive. <b>Knowledge</b> in a notes vault that you and the agent both write.</p>
+      <p>Data moves one way: <b>raw</b> as received, <b>processed</b> by code, <b>outputs</b> made by a script. So every number traces back to its delivery.</p>
+      <p class="note"><svg class="hi"><use href="#i-cloud"/></svg><span><b>Never search the drive from the top.</b> A cloud drive downloads every file a search touches.</span></p>
+      <div class="kit"><span class="lbl">In the kit</span><span class="chip g">Guide 01</span><span class="chip">kit/CLAUDE.md.template</span><span class="chip">kit/hooks/guard.py</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 2 DESK -->
+<section class="band wrap" id="desk">
+  <div class="band-head">
+    <span class="plate"><svg class="hi"><use href="#i-desk"/></svg></span>
+    <div><p class="eyebrow">Guide 02</p><h2>The agent and its desk</h2></div>
+  </div>
+  <div class="st-body">
+    <figure class="fig">
+<svg class="dg" viewBox="0 0 440 362" role="img" aria-labelledby="s2-t">
+<title id="s2-t">The desk. On the left, what is laid before the first word: the agent's own instructions, your rules file, a line per skill, the connector tools, a line per agent, the memory index. On the right, what piles up while you work. Below: the whole desk is read on every turn, and swept to a summary when full.</title>
+<rect x="4" y="24" width="432" height="236" rx="16" class="desk"/>
+<text x="8" y="14" class="tcap">THE DESK</text>
+<text x="20" y="48" class="tcap">LAID BEFORE THE FIRST WORD</text>
+<rect x="20" y="58" width="192" height="26" rx="6" class="bx"/><use href="#i-agent" x="28" y="63" width="16" height="16" class="ico cmu"/><text x="52" y="76" class="tsi">its own instructions</text>
+<rect x="20" y="90" width="192" height="26" rx="6" class="kr"/><use href="#i-rules" x="28" y="95" width="16" height="16" class="ico cr"/><text x="52" y="108" class="tsi">your rules file</text>
+<rect x="20" y="122" width="192" height="26" rx="6" class="ks"/><use href="#i-skills" x="28" y="127" width="16" height="16" class="ico cs"/><text x="52" y="140" class="tsi">a line per skill</text>
+<rect x="20" y="154" width="192" height="26" rx="6" class="bx"/><use href="#i-plug" x="28" y="159" width="16" height="16" class="ico cmu"/><text x="52" y="172" class="tsi">connector tools</text>
+<rect x="20" y="186" width="192" height="26" rx="6" class="bx"/><use href="#i-agent" x="28" y="191" width="16" height="16" class="ico cmu"/><text x="52" y="204" class="tsi">a line per agent</text>
+<rect x="20" y="218" width="192" height="26" rx="6" class="km"/><use href="#i-memory" x="28" y="223" width="16" height="16" class="ico cm"/><text x="52" y="236" class="tsi">the memory index</text>
+
+<text x="232" y="48" class="tcap">PILES UP AS YOU WORK</text>
+<rect x="232" y="58" width="188" height="26" rx="6" class="dash"/><text x="244" y="76" class="tsi">what you say</text>
+<rect x="232" y="90" width="188" height="26" rx="6" class="dash"/><text x="244" y="108" class="tsi">every file it opens</text>
+<rect x="232" y="122" width="188" height="26" rx="6" class="dash"/><text x="244" y="140" class="tsi">every tool result</text>
+<rect x="232" y="154" width="188" height="26" rx="6" class="dash"/><text x="244" y="172" class="tsi">its answers</text>
+<rect x="232" y="186" width="188" height="26" rx="6" class="dash" style="opacity:.55"/>
+<rect x="232" y="218" width="188" height="26" rx="6" class="dash" style="opacity:.3"/>
+<text x="326" y="204" text-anchor="middle" class="tx">and more, every turn</text>
+
+<rect x="4" y="276" width="212" height="80" rx="12" class="bx"/>
+<use href="#i-loop" x="16" y="296" width="40" height="40" class="ico"/>
+<text x="68" y="304" class="tb">read whole</text>
+<text x="68" y="322" class="tx">on every turn,</text>
+<text x="68" y="338" class="tx">all of it, again</text>
+<rect x="224" y="276" width="212" height="80" rx="12" class="bx"/>
+<use href="#i-sweep" x="236" y="296" width="40" height="40" class="ico"/>
+<text x="288" y="304" class="tb">full: swept</text>
+<text x="288" y="322" class="tx">a summary is kept,</text>
+<text x="288" y="338" class="tx">the rest forgotten</text>
+</svg>
+      <figcaption>No search sits in front of the model: what reaches it is what was laid out, all of it.</figcaption>
+    </figure>
+    <div class="txt">
+      <p>Before you type a word, the desk already holds the agent's own instructions, your <b>rules file</b>, one line per <b>skill</b>, the tools of each <b>connector</b> you switched on (a connector, or Model Context Protocol (MCP) server, gives the agent tools for a service), and its <b>memory</b> index.</p>
+      <p>The session piles on top. The whole desk is read again on every turn; when it is full, a summary is kept and the rest forgotten.</p>
+      <ul class="plain">
+        <li><b>You lay the desk</b>, by what you write and what you switch on.</li>
+        <li><b>A crowded desk is read less carefully</b>, and paid for on every turn.</li>
+        <li><b>A new task is a new session.</b> Files hold what must be remembered.</li>
+      </ul>
+      <p class="note"><svg class="hi"><use href="#i-dial"/></svg><span>In the author's setup, <b>60,000 to 66,000 tokens</b> lie on the desk before the first word (73 sessions, October 2026). <code>/context</code> shows yours.</span></p>
+      <div class="kit"><span class="lbl">In the kit</span><span class="chip g">Guide 02</span><span class="chip">kit/tools/measure_context.md</span><span class="chip">kit/CLAUDE.md.template</span></div>
+    </div>
+  </div>
+
+  <div class="folders">
+    <div><h3>The agent's folder, opened</h3>
+      <p class="sub">Where each kind of instruction lives on disk. The colour of the mark on the right says which kind it is.</p></div>
+    <div class="fold-grid">
+      <figure class="fig">
+<svg class="dg" viewBox="0 0 420 548" role="img" aria-labelledby="f1-t">
+<title id="f1-t">Claude Code's files. In the project folder: CLAUDE.md, the rules file, and a .claude folder holding skills, agents, rules for some kinds of file, hook scripts and settings.json, which switches the hooks on. Outside the project, in the user folder: the memory folder for each project, with the MEMORY.md index and one file per topic, and the same skills, agents and hooks folders for every project.</title>
+<text x="4" y="22" class="th2">Claude Code</text>
+<rect x="4" y="38" width="412" height="290" rx="14" class="bxi"/>
+<text x="20" y="62" class="tcap">IN THE PROJECT</text>
+<path d="M28 95V147M28 117H39M28 147H39" class="lnt"/>
+<path d="M50 155V297M50 177H61M50 207H61M50 237H61M50 267H61M50 297H61" class="lnt"/>
+<use href="#i-folder" x="20" y="79" width="16" height="16" class="ico"/><text x="44" y="92" class="tpath">your-project/</text>
+<use href="#i-file" x="42" y="109" width="16" height="16" class="ico"/><text x="66" y="122" class="tpath">CLAUDE.md</text>
+<text x="384" y="122" text-anchor="end" class="tx">always read</text><use href="#i-rules" x="392" y="109" width="16" height="16" class="ico cr"/>
+<use href="#i-folder" x="42" y="139" width="16" height="16" class="ico"/><text x="66" y="152" class="tpath">.claude/</text>
+<use href="#i-folder" x="64" y="169" width="16" height="16" class="ico"/><text x="88" y="182" class="tpath">skills/</text>
+<text x="384" y="182" text-anchor="end" class="tx">a folder each</text><use href="#i-skills" x="392" y="169" width="16" height="16" class="ico cs"/>
+<use href="#i-folder" x="64" y="199" width="16" height="16" class="ico"/><text x="88" y="212" class="tpath">agents/</text>
+<text x="384" y="212" text-anchor="end" class="tx">a file each</text><use href="#i-agent" x="392" y="199" width="16" height="16" class="ico cmu"/>
+<use href="#i-folder" x="64" y="229" width="16" height="16" class="ico"/><text x="88" y="242" class="tpath">rules/</text>
+<text x="384" y="242" text-anchor="end" class="tx">for some kinds of file</text><use href="#i-rules" x="392" y="229" width="16" height="16" class="ico cr"/>
+<use href="#i-folder" x="64" y="259" width="16" height="16" class="ico"/><text x="88" y="272" class="tpath">hooks/ or scripts/</text>
+<text x="384" y="272" text-anchor="end" class="tx">the scripts</text><use href="#i-hooks" x="392" y="259" width="16" height="16" class="ico ch"/>
+<use href="#i-file" x="64" y="289" width="16" height="16" class="ico"/><text x="88" y="302" class="tpath">settings.json</text>
+<text x="384" y="302" text-anchor="end" class="tx">switches hooks on</text><use href="#i-hooks" x="392" y="289" width="16" height="16" class="ico ch"/>
+
+<rect x="4" y="344" width="412" height="196" rx="14" class="bxi"/>
+<text x="20" y="368" class="tcap">OUTSIDE THE PROJECT</text>
+<path d="M28 401V513M28 423H39M28 513H39" class="lnt"/>
+<path d="M50 431V483M50 453H61M50 483H61" class="lnt"/>
+<use href="#i-folder" x="20" y="385" width="16" height="16" class="ico"/><text x="44" y="398" class="tpath">~/.claude/</text>
+<text x="384" y="398" text-anchor="end" class="tx">your user folder</text>
+<use href="#i-folder" x="42" y="415" width="16" height="16" class="ico"/><text x="66" y="428" class="tpath">projects/&lt;project&gt;/memory/</text>
+<use href="#i-file" x="64" y="445" width="16" height="16" class="ico"/><text x="88" y="458" class="tpath">MEMORY.md</text>
+<text x="384" y="458" text-anchor="end" class="tx">the index</text><use href="#i-memory" x="392" y="445" width="16" height="16" class="ico cm"/>
+<use href="#i-file" x="64" y="475" width="16" height="16" class="ico"/><text x="88" y="488" class="tpath">&lt;topic&gt;.md</text>
+<text x="384" y="488" text-anchor="end" class="tx">one per topic</text><use href="#i-memory" x="392" y="475" width="16" height="16" class="ico cm"/>
+<use href="#i-folder" x="42" y="505" width="16" height="16" class="ico"/><text x="66" y="518" class="tpath">skills/ agents/ hooks/</text>
+<text x="384" y="518" text-anchor="end" class="tx">every project</text>
+</svg>
+        <figcaption>The agent writes its memory itself, outside the project.</figcaption>
+      </figure>
+      <figure class="fig">
+<svg class="dg" viewBox="0 0 420 548" role="img" aria-labelledby="f2-t">
+<title id="f2-t">Codex CLI's files, as its documentation names them. In the project folder: AGENTS.md, a further AGENTS.md in a subfolder for work there, skills in .agents/skills, and a .codex folder with config.toml for settings and connectors and hooks.json for the hooks. Agent definitions are not named here: see the agent's documentation. Outside the project: the user's .codex folder with AGENTS.md, the hooks and config, and memories, off by default; skills for every project in .agents/skills in the home folder.</title>
+<text x="4" y="22" class="th2">Codex CLI</text>
+<rect x="4" y="38" width="412" height="290" rx="14" class="bxi"/>
+<text x="20" y="62" class="tcap">IN THE PROJECT</text>
+<path d="M28 95V267M28 117H39M28 147H39M28 177H39M28 207H39M28 267H39" class="lnt"/>
+<path d="M50 215V267M50 237H61M50 267H61" class="lnt"/>
+<use href="#i-folder" x="20" y="79" width="16" height="16" class="ico"/><text x="44" y="92" class="tpath">your-project/</text>
+<use href="#i-file" x="42" y="109" width="16" height="16" class="ico"/><text x="66" y="122" class="tpath">AGENTS.md</text>
+<text x="384" y="122" text-anchor="end" class="tx">always read</text><use href="#i-rules" x="392" y="109" width="16" height="16" class="ico cr"/>
+<use href="#i-file" x="42" y="139" width="16" height="16" class="ico"/><text x="66" y="152" class="tpath">&lt;folder&gt;/AGENTS.md</text>
+<text x="384" y="152" text-anchor="end" class="tx">for that folder</text><use href="#i-rules" x="392" y="139" width="16" height="16" class="ico cr"/>
+<use href="#i-folder" x="42" y="169" width="16" height="16" class="ico"/><text x="66" y="182" class="tpath">.agents/skills/</text>
+<text x="384" y="182" text-anchor="end" class="tx">a folder each</text><use href="#i-skills" x="392" y="169" width="16" height="16" class="ico cs"/>
+<use href="#i-folder" x="42" y="199" width="16" height="16" class="ico"/><text x="66" y="212" class="tpath">.codex/</text>
+<use href="#i-file" x="64" y="229" width="16" height="16" class="ico"/><text x="88" y="242" class="tpath">config.toml</text>
+<text x="384" y="242" text-anchor="end" class="tx">settings, connectors</text><use href="#i-plug" x="392" y="229" width="16" height="16" class="ico cmu"/>
+<use href="#i-file" x="64" y="259" width="16" height="16" class="ico"/><text x="88" y="272" class="tpath">hooks.json</text>
+<text x="384" y="272" text-anchor="end" class="tx">the hooks</text><use href="#i-hooks" x="392" y="259" width="16" height="16" class="ico ch"/>
+<rect x="20" y="284" width="380" height="30" rx="8" class="dash"/>
+<use href="#i-agent" x="32" y="291" width="16" height="16" class="ico cmu"/><text x="56" y="304" class="tx">agents: see the agent's documentation</text>
+
+<rect x="4" y="344" width="412" height="196" rx="14" class="bxi"/>
+<text x="20" y="368" class="tcap">OUTSIDE THE PROJECT</text>
+<path d="M28 401V483M28 423H39M28 453H39M28 483H39" class="lnt"/>
+<use href="#i-folder" x="20" y="385" width="16" height="16" class="ico"/><text x="44" y="398" class="tpath">~/.codex/</text>
+<text x="384" y="398" text-anchor="end" class="tx">your user folder</text>
+<use href="#i-file" x="42" y="415" width="16" height="16" class="ico"/><text x="66" y="428" class="tpath">AGENTS.md</text>
+<text x="384" y="428" text-anchor="end" class="tx">every project</text><use href="#i-rules" x="392" y="415" width="16" height="16" class="ico cr"/>
+<use href="#i-file" x="42" y="445" width="16" height="16" class="ico"/><text x="66" y="458" class="tpath">hooks.json, config.toml</text>
+<text x="384" y="458" text-anchor="end" class="tx">every project</text><use href="#i-hooks" x="392" y="445" width="16" height="16" class="ico ch"/>
+<use href="#i-memory" x="42" y="475" width="16" height="16" class="ico cm"/><text x="66" y="488" class="txi">memories</text>
+<text x="384" y="488" text-anchor="end" class="tx">off by default</text><use href="#i-memory" x="392" y="475" width="16" height="16" class="ico cm"/>
+<use href="#i-folder" x="20" y="505" width="16" height="16" class="ico"/><text x="44" y="518" class="tpath">$HOME/.agents/skills/</text>
+<text x="384" y="518" text-anchor="end" class="tx">every project</text><use href="#i-skills" x="392" y="505" width="16" height="16" class="ico cs"/>
+</svg>
+        <figcaption>As Codex's documentation named them in November 2026. A dashed box: not named there.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- 3 INSTRUCTIONS -->
+<section class="band wrap" id="instructions">
+  <div class="band-head">
+    <span class="plate multi"><svg class="hi"><use href="#i-rules"/></svg><svg class="hi"><use href="#i-skills"/></svg><svg class="hi"><use href="#i-hooks"/></svg><svg class="hi"><use href="#i-memory"/></svg></span>
+    <div><p class="eyebrow">Guides 02, 03 and 04</p><h2>Four kinds of instruction, and when each loads</h2>
+    <p class="sub">When a kind loads decides what belongs in it.</p></div>
+  </div>
+  <div class="st-body">
+    <figure class="fig">
+<svg class="dg" viewBox="0 0 440 474" role="img" aria-labelledby="s3-t">
+<title id="s3-t">When each kind of instruction loads. Rules: the whole file at session start, kept on the desk. Skills: one line each at the start, the body when a request matches. Hooks: never on the desk; the program runs them before each action. Memory: the index at the start, a topic file if needed, written by the agent as work goes on.</title>
+<rect x="124" y="6" width="40" height="40" rx="9" class="kr"/><use href="#i-rules" x="132" y="14" width="24" height="24" class="ico cr"/>
+<text x="144" y="64" text-anchor="middle" class="tb">Rules</text>
+<rect x="208" y="6" width="40" height="40" rx="9" class="ks"/><use href="#i-skills" x="216" y="14" width="24" height="24" class="ico cs"/>
+<text x="228" y="64" text-anchor="middle" class="tb">Skills</text>
+<rect x="292" y="6" width="40" height="40" rx="9" class="kh"/><use href="#i-hooks" x="300" y="14" width="24" height="24" class="ico ch"/>
+<text x="312" y="64" text-anchor="middle" class="tb">Hooks</text>
+<rect x="376" y="6" width="40" height="40" rx="9" class="km"/><use href="#i-memory" x="384" y="14" width="24" height="24" class="ico cm"/>
+<text x="396" y="64" text-anchor="middle" class="tb">Memory</text>
+
+<path d="M0 76H440M0 160H440M0 244H440M0 328H440M0 412H440" class="lnf"/>
+<text x="4" y="112" class="tb">session</text><text x="4" y="130" class="tb">starts</text>
+<text x="4" y="196" class="tb">a request</text><text x="4" y="214" class="tb">matches</text>
+<text x="4" y="280" class="tb">before each</text><text x="4" y="298" class="tb">action</text>
+<text x="4" y="364" class="tb">as work</text><text x="4" y="382" class="tb">goes on</text>
+
+<rect x="141" y="138" width="6" height="266" class="fr"/>
+<rect x="108" y="88" width="72" height="48" rx="8" class="kr"/>
+<text x="144" y="108" text-anchor="middle" class="txi">whole</text><text x="144" y="124" text-anchor="middle" class="txi">file</text>
+
+<rect x="226" y="134" width="4" height="32" class="fs" style="opacity:.55"/><rect x="226" y="244" width="4" height="160" class="fs" style="opacity:.55"/>
+<rect x="192" y="88" width="72" height="44" rx="8" class="ks"/>
+<text x="228" y="106" text-anchor="middle" class="txi">one line</text><text x="228" y="122" text-anchor="middle" class="txi">each</text>
+<rect x="192" y="168" width="72" height="74" rx="8" class="ks"/>
+<text x="228" y="186" text-anchor="middle" class="txi" style="font-size:11.5px">procedure</text>
+<text x="228" y="200" text-anchor="middle" class="txi" style="font-size:11.5px">resources</text>
+<text x="228" y="214" text-anchor="middle" class="txi" style="font-size:11.5px">scripts</text>
+<text x="228" y="228" text-anchor="middle" class="txi" style="font-size:11.5px">checks</text>
+
+<rect x="276" y="88" width="72" height="44" rx="8" class="ghost"/>
+<text x="312" y="106" text-anchor="middle" class="tx">not on</text><text x="312" y="122" text-anchor="middle" class="tx">the desk</text>
+<rect x="276" y="252" width="72" height="70" rx="8" class="kh"/>
+<use href="#i-hooks" x="300" y="257" width="24" height="24" class="ico ch"/>
+<text x="312" y="297" text-anchor="middle" class="txi">deny, ask</text><text x="312" y="311" text-anchor="middle" class="txi">or pass</text>
+
+<rect x="394" y="134" width="4" height="40" class="fm" style="opacity:.55"/><rect x="394" y="224" width="4" height="112" class="fm" style="opacity:.55"/>
+<rect x="360" y="88" width="72" height="44" rx="8" class="km"/>
+<text x="396" y="115" text-anchor="middle" class="txi">index</text>
+<rect x="360" y="176" width="72" height="46" rx="8" class="dash"/>
+<text x="396" y="195" text-anchor="middle" class="tx">topic file,</text><text x="396" y="211" text-anchor="middle" class="tx">if needed</text>
+<rect x="360" y="338" width="72" height="62" rx="8" class="km"/>
+<text x="396" y="357" text-anchor="middle" class="txi">it writes;</text><text x="396" y="372" text-anchor="middle" class="txi">one screen</text><text x="396" y="387" text-anchor="middle" class="txi">per project</text>
+
+<rect x="4" y="430" width="12" height="12" rx="2" class="fr"/>
+<text x="24" y="441" class="tx">on the desk until the session ends</text>
+<rect x="4" y="452" width="12" height="12" rx="2" class="ghost"/>
+<text x="24" y="463" class="tx">never on the desk: run by the program, not read</text>
+</svg>
+      <figcaption>Read across a row to see what is on the desk at that moment.</figcaption>
+    </figure>
+    <div class="txt">
+      <div class="kinds">
+        <div class="kind r"><h3><svg class="hi cr"><use href="#i-rules"/></svg>Rules</h3><span class="when">Always, read whole</span>
+          <p>Only what nothing else would prompt the agent to look up, each line with its reason. Under 200 lines.</p></div>
+        <div class="kind s"><h3><svg class="hi cs"><use href="#i-skills"/></svg>Skills</h3><span class="when">On trigger</span>
+          <p>A procedure in its own folder. One line on the desk; the rest loads when a request matches, or on <code>/name</code>.</p></div>
+        <div class="kind h"><h3><svg class="hi ch"><use href="#i-hooks"/></svg>Hooks</h3><span class="when">Always, whatever the agent decides</span>
+          <p>A script the program runs before each action. Never read, so never forgotten: deny, ask or pass.</p></div>
+        <div class="kind m"><h3><svg class="hi cm"><use href="#i-memory"/></svg>Memory</h3><span class="when">Written by the agent</span>
+          <p>Its own notes on where things stand. One screen each, and never the place for a rule.</p></div>
+      </div>
+      <p>The same ideas in Codex CLI, OpenAI's command-line interface (CLI) agent:</p>
+      <div class="tblw"><table>
+        <thead><tr><th>Idea</th><th>Claude Code</th><th>Codex CLI</th></tr></thead>
+        <tbody>
+          <tr><td>Rules file</td><td><code>CLAUDE.md</code></td><td><code>AGENTS.md</code></td></tr>
+          <tr><td>Skills</td><td><code>SKILL.md</code> folders in <code>~/.claude/skills/</code></td><td><code>SKILL.md</code> folders in <code>.agents/skills</code></td></tr>
+          <tr><td>Hooks</td><td><code>PreToolUse</code> in <code>settings.json</code></td><td><code>PreToolUse</code> in <code>hooks.json</code> or <code>config.toml</code></td></tr>
+          <tr><td>Memory</td><td>automatic, with a <code>MEMORY.md</code> index</td><td>"memories", off by default</td></tr>
+        </tbody></table></div>
+      <div class="kit"><span class="lbl">In the kit</span><span class="chip g">Guides 02 to 04</span><span class="chip">kit/skills/skill-library</span><span class="chip">kit/skills/learn</span><span class="chip">kit/skills/dictionary</span><span class="chip">kit/hooks/guard.py</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 VAULT -->
+<section class="band wrap" id="vault">
+  <div class="band-head">
+    <span class="plate"><svg class="hi"><use href="#i-know"/></svg></span>
+    <div><p class="eyebrow">Guide 08</p><h2>The knowledge base, in lanes</h2></div>
+  </div>
+  <div class="st-body">
+    <figure class="fig">
+<svg class="dg" viewBox="0 0 440 630" role="img" aria-labelledby="s4-t">
+<title id="s4-t">Thirteen lanes of a notes vault in two groups, each marked with who writes it. Below, three mechanisms: a gate that keeps unprocessed capture from being cited, an archive that moves agent notes after thirty days without an edit, and a reading flag that the owner sets after reading.</title>
+<defs><marker id="s4-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 1L10 5L0 9z" class="fi"/></marker></defs>
+<text x="8" y="16" class="tcap">COMING IN, AND REFERENCE</text>
+<text x="228" y="16" class="tcap">THE WORK AS IT GOES</text>
+
+<rect x="8" y="28" width="204" height="30" rx="8" class="dash"/><text x="20" y="48">Inbox</text>
+<use href="#i-gate" x="164" y="35" width="16" height="16" class="ico"/><use href="#i-you" x="188" y="35" width="16" height="16" class="ico"/>
+<rect x="8" y="66" width="204" height="30" rx="8" class="dash"/><text x="20" y="86">Raw input</text>
+<use href="#i-gate" x="140" y="73" width="16" height="16" class="ico"/><use href="#i-you" x="164" y="73" width="16" height="16" class="ico"/><use href="#i-agent" x="188" y="73" width="16" height="16" class="ico"/>
+<rect x="8" y="104" width="204" height="30" rx="8" class="pll"/><text x="20" y="124">Literature notes</text>
+<use href="#i-plug" x="164" y="111" width="16" height="16" class="ico"/><use href="#i-you" x="188" y="111" width="16" height="16" class="ico"/>
+<rect x="8" y="142" width="204" height="30" rx="8" class="pll"/><text x="20" y="162">Wiki</text>
+<use href="#i-agent" x="188" y="149" width="16" height="16" class="ico"/>
+<rect x="8" y="180" width="204" height="30" rx="8" class="pll"/><text x="20" y="200">People</text>
+<use href="#i-you" x="188" y="187" width="16" height="16" class="ico"/>
+<rect x="8" y="218" width="204" height="30" rx="8" class="pll"/><text x="20" y="238">Maps of content</text>
+<use href="#i-you" x="164" y="225" width="16" height="16" class="ico"/><use href="#i-agent" x="188" y="225" width="16" height="16" class="ico"/>
+<rect x="8" y="256" width="204" height="30" rx="8" class="pll"/><text x="20" y="276">Templates, files</text>
+<use href="#i-you" x="188" y="263" width="16" height="16" class="ico"/>
+
+<rect x="228" y="28" width="204" height="30" rx="8" class="pll"/><text x="240" y="48">Meeting notes</text>
+<use href="#i-you" x="384" y="35" width="16" height="16" class="ico"/><use href="#i-agent" x="408" y="35" width="16" height="16" class="ico"/>
+<rect x="228" y="66" width="204" height="30" rx="8" class="pll"/><text x="240" y="86">Daily notes</text>
+<use href="#i-you" x="384" y="73" width="16" height="16" class="ico"/><use href="#i-agent" x="408" y="73" width="16" height="16" class="ico"/>
+<rect x="228" y="104" width="204" height="30" rx="8" class="pll"/><text x="240" y="124">Projects</text>
+<use href="#i-you" x="384" y="111" width="16" height="16" class="ico"/><use href="#i-agent" x="408" y="111" width="16" height="16" class="ico"/>
+<rect x="228" y="142" width="204" height="30" rx="8" class="pll"/><text x="240" y="162">Publications</text>
+<use href="#i-you" x="384" y="149" width="16" height="16" class="ico"/><use href="#i-agent" x="408" y="149" width="16" height="16" class="ico"/>
+<rect x="228" y="180" width="204" height="30" rx="8" class="pll"/><text x="240" y="200">Permanent (optional)</text>
+<use href="#i-you" x="408" y="187" width="16" height="16" class="ico"/>
+<rect x="228" y="218" width="204" height="30" rx="8" class="pll"/><text x="240" y="238">Agent outputs</text>
+<use href="#i-archive" x="384" y="225" width="16" height="16" class="ico"/><use href="#i-agent" x="408" y="225" width="16" height="16" class="ico"/>
+<use href="#i-you" x="232" y="266" width="16" height="16" class="ico"/><text x="252" y="279" class="tx">you</text>
+<use href="#i-agent" x="282" y="266" width="16" height="16" class="ico"/><text x="302" y="279" class="tx">agent</text>
+<use href="#i-plug" x="344" y="266" width="16" height="16" class="ico"/><text x="364" y="279" class="tx">plugin</text>
+
+<text x="8" y="322" class="tcap">A GATE</text>
+<rect x="8" y="334" width="40" height="40" rx="10" class="fsoft"/><use href="#i-inbox" x="17" y="343" width="22" height="22" class="ico"/>
+<text x="28" y="394" text-anchor="middle" class="tx">capture</text>
+<path d="M52 354H90" class="ln" marker-end="url(#s4-a)"/>
+<use href="#i-gate" x="96" y="342" width="24" height="24" class="ico"/>
+<text x="108" y="394" text-anchor="middle" class="tx">processed</text>
+<path d="M126 354H164" class="ln" marker-end="url(#s4-a)"/>
+<rect x="170" y="334" width="40" height="40" rx="10" class="fsoft"/><use href="#i-note" x="179" y="343" width="22" height="22" class="ico"/>
+<text x="190" y="394" text-anchor="middle" class="tx">a proper note</text>
+<path d="M214 354H252" class="ln" marker-end="url(#s4-a)"/>
+<use href="#i-check" x="258" y="342" width="24" height="24" class="ico"/>
+<text x="270" y="394" text-anchor="middle" class="tx">then cited</text>
+<text x="304" y="350" class="txi">raw capture is</text>
+<text x="304" y="366" class="txi">never cited</text>
+
+<text x="8" y="428" class="tcap">AN ARCHIVE THAT RUNS ITSELF</text>
+<rect x="8" y="440" width="168" height="30" rx="7" class="pll"/>
+<text x="18" y="460" class="tm">YYYY-MM-DD-topic.md</text>
+<path d="M182 455H220" class="ln" marker-end="url(#s4-a)"/>
+<text x="201" y="488" text-anchor="middle" class="tx">30 days</text>
+<text x="201" y="503" text-anchor="middle" class="tx">no edit</text>
+<rect x="226" y="436" width="38" height="38" rx="10" class="fsoft"/><use href="#i-archive" x="234" y="444" width="22" height="22" class="ico"/>
+<text x="274" y="452" class="tm">Archive/YYYY-MM/</text>
+<text x="274" y="470" class="tx">moved by a script</text>
+
+<text x="8" y="532" class="tcap">THE READING FLAG</text>
+<rect x="8" y="544" width="38" height="38" rx="10" class="fsoft"/><use href="#i-agent" x="16" y="552" width="22" height="22" class="ico"/>
+<rect x="54" y="547" width="150" height="32" rx="8" class="pll"/>
+<use href="#i-flag" x="62" y="555" width="16" height="16" class="ico"/>
+<text x="84" y="568" class="tm">reviewed: false</text>
+<path d="M208 563H244" class="ln" marker-end="url(#s4-a)"/>
+<rect x="250" y="544" width="38" height="38" rx="10" class="fsoft"/><use href="#i-you" x="258" y="552" width="22" height="22" class="ico"/>
+<rect x="296" y="547" width="136" height="32" rx="8" class="pll"/>
+<use href="#i-flag" x="304" y="555" width="16" height="16" class="ico"/>
+<text x="326" y="568" class="tm">reviewed: true</text>
+<text x="8" y="610" class="tx">the agent writes; the owner reads and sets the flag.</text>
+<text x="8" y="626" class="tx">The note is used meanwhile: the flag only says what is new.</text>
+</svg>
+      <figcaption>The author's lanes, as one example of the pattern. The first structure came from Research Memex.</figcaption>
+    </figure>
+    <div class="txt">
+      <p>A <b>lane</b> is a kind of note with its own job and its own author. The names are yours; the author's vault started from <a href="https://research-memex.org">Research Memex</a>.</p>
+      <p><b>Two lanes are gates</b>: the inbox and the raw input hold unvetted capture, never cited until it is processed into a proper note.</p>
+      <p><b>The agent writes into a lane of its own</b>: plans, analyses, decisions, long answers, each a dated note. After thirty days without an edit, a note moves to its month's archive, and links still find it.</p>
+      <div class="kit"><span class="lbl">In the kit</span><span class="chip g">Guide 08</span><span class="chip">kit/templates/meeting-note.md</span><span class="chip">kit/templates/daily-note.md</span><span class="chip">kit/templates/handover-note.md</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 LITERATURE -->
+<section class="band wrap" id="literature">
+  <div class="band-head">
+    <span class="plate"><svg class="hi"><use href="#i-key"/></svg></span>
+    <div><p class="eyebrow">Guides 05 and 07</p><h2>Literature: the paper itself</h2></div>
+  </div>
+  <div class="st-body">
+    <figure class="fig">
+<svg class="dg" viewBox="0 0 440 504" role="img" aria-labelledby="s5-t">
+<title id="s5-t">One citation key joins four places: the reference manager item, the literature card, every link in the notes and the citation in the manuscript. Below, reading for a claim: from the card, if the claim carries weight, the agent opens the paper itself and quotes the passage with its page.</title>
+<defs><marker id="s5-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 1L10 5L0 9z" class="fi"/></marker></defs>
+<text x="8" y="16" class="tcap">ONE KEY, FOUR PLACES</text>
+<path d="M160 108C140 108 120 100 106 92M280 108C300 108 320 100 334 92M160 124C140 124 120 130 106 134M280 124C300 124 320 130 334 134" class="ln"/>
+<rect x="8" y="30" width="180" height="60" rx="10" class="bx"/>
+<use href="#i-library" x="20" y="40" width="22" height="22" class="ico"/>
+<text x="50" y="56" class="tb">reference manager</text>
+<text x="20" y="80" class="tx">the item and its PDF</text>
+<rect x="252" y="30" width="180" height="60" rx="10" class="bx"/>
+<use href="#i-note" x="264" y="40" width="22" height="22" class="ico"/>
+<text x="294" y="56" class="tb">literature card</text>
+<text x="264" y="80" class="tx">named by the key</text>
+<rect x="8" y="136" width="180" height="60" rx="10" class="bx"/>
+<use href="#i-link" x="20" y="146" width="22" height="22" class="ico"/>
+<text x="50" y="162" class="tb">every link</text>
+<text x="20" y="186" class="tm">[[doe2023]]</text>
+<rect x="252" y="136" width="180" height="60" rx="10" class="bx"/>
+<use href="#i-paper" x="264" y="146" width="22" height="22" class="ico"/>
+<text x="294" y="162" class="tb">the manuscript</text>
+<text x="264" y="186" class="tx">cites the same key</text>
+<rect x="160" y="98" width="120" height="36" rx="18" class="bxi"/>
+<use href="#i-key" x="172" y="105" width="22" height="22" class="ico"/>
+<text x="202" y="121" class="tmb">doe2023</text>
+<text x="220" y="220" text-anchor="middle" class="tx">generated once, never changed</text>
+
+<text x="8" y="256" class="tcap">READING FOR A CLAIM</text>
+<rect x="8" y="268" width="150" height="62" rx="10" class="bx"/>
+<use href="#i-note" x="20" y="278" width="20" height="20" class="ico"/>
+<text x="46" y="293" class="tb">the card</text>
+<text x="20" y="318" class="tm">read: abstract</text>
+<path d="M160 299H184" class="ln" marker-end="url(#s5-a)"/>
+<path d="M250 260L312 299L250 338L188 299Z" class="bxi"/>
+<text x="250" y="296" text-anchor="middle" class="txi">carries</text>
+<text x="250" y="311" text-anchor="middle" class="txi">weight?</text>
+<path d="M316 299H346" class="ln" marker-end="url(#s5-a)"/>
+<text x="331" y="289" text-anchor="middle" class="tx">no</text>
+<rect x="352" y="272" width="80" height="54" rx="10" class="bx"/>
+<text x="392" y="295" text-anchor="middle" class="tx">the card</text>
+<text x="392" y="311" text-anchor="middle" class="tx">is enough</text>
+<path d="M250 341V360" class="ln" marker-end="url(#s5-a)"/>
+<text x="262" y="356" class="tx">yes</text>
+<rect x="40" y="364" width="392" height="56" rx="10" class="bx"/>
+<use href="#i-paper" x="54" y="380" width="24" height="24" class="ico"/>
+<text x="88" y="388" class="tb">opens the paper itself</text>
+<text x="88" y="408" class="tx">the full text, or a pivotal paper searched by line</text>
+<path d="M250 422V442" class="ln" marker-end="url(#s5-a)"/>
+<rect x="40" y="446" width="392" height="54" rx="10" class="bx"/>
+<use href="#i-check" x="54" y="461" width="24" height="24" class="ico"/>
+<text x="88" y="469" class="tb">quotes the passage with its page</text>
+<text x="88" y="489" class="tx">and says whether it checked the note or the paper</text>
+</svg>
+      <figcaption>A card read from the abstract cannot carry a method detail.</figcaption>
+    </figure>
+    <div class="txt">
+      <p>One <b>citation key</b>, generated once and never changed, joins the reference manager item, its literature card, every link in the notes and the citation in the manuscript.</p>
+      <p>A <b>literature card</b> indexes what a paper holds for your work, each item with its page and a short quotation, and says what was read: the full text, some sections, or the abstract.</p>
+      <p><b>When a claim carries weight</b>, the agent opens the paper itself and quotes the passage with its page. A citation no search finds is not used.</p>
+      <p class="note"><svg class="hi"><use href="#i-library"/></svg><span>In the author's setup: Zotero, Better BibTeX, ZotLit, a full-text connector, MinerU for pivotal papers, scite and Scopus for the checks. Any tools with stable keys will do.</span></p>
+      <div class="kit"><span class="lbl">In the kit</span><span class="chip g">Guide 07</span><span class="chip g">Guide 05</span><span class="chip">kit/tools/literature-stack.md</span><span class="chip">kit/templates/literature-card.md</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 PRODUCTS -->
+<section class="band wrap" id="products">
+  <div class="band-head">
+    <span class="plate"><svg class="hi"><use href="#i-referee"/></svg></span>
+    <div><p class="eyebrow">Guide 05</p><h2>Products, and the referee pass before anything leaves</h2></div>
+  </div>
+  <div class="st-body">
+    <figure class="fig">
+<svg class="dg" viewBox="0 0 440 402" role="img" aria-labelledby="s6-t">
+<title id="s6-t">Five products, each with its home root, pass a referee gate before they leave: a new agent that did not write the text checks every claim against its source, and you decide. Below, one figure, 80 kilowatt hours per square metre, with the six basis words that say what kind of number it is.</title>
+<defs><marker id="s6-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 1L10 5L0 9z" class="fi"/></marker></defs>
+<text x="8" y="16" class="tcap">PRODUCTS</text>
+<text x="200" y="16" text-anchor="end" class="tcap">HOME</text>
+<rect x="8" y="28" width="192" height="32" rx="8" class="pll"/><use href="#i-note" x="16" y="33" width="22" height="22" class="ico"/><text x="46" y="49" class="tb">notes</text><use href="#i-know" x="176" y="36" width="16" height="16" class="ico cmu"/>
+<rect x="8" y="68" width="192" height="32" rx="8" class="pll"/><use href="#i-paper" x="16" y="73" width="22" height="22" class="ico"/><text x="46" y="89" class="tb">papers</text><use href="#i-code" x="154" y="76" width="16" height="16" class="ico cmu"/><use href="#i-data" x="176" y="76" width="16" height="16" class="ico cmu"/>
+<rect x="8" y="108" width="192" height="32" rx="8" class="pll"/><use href="#i-deck" x="16" y="113" width="22" height="22" class="ico"/><text x="46" y="129" class="tb">slide decks</text><use href="#i-data" x="176" y="116" width="16" height="16" class="ico cmu"/>
+<rect x="8" y="148" width="192" height="32" rx="8" class="pll"/><use href="#i-table" x="16" y="153" width="22" height="22" class="ico"/><text x="46" y="169" class="tb">data deliverables</text><use href="#i-data" x="176" y="156" width="16" height="16" class="ico cmu"/>
+<rect x="8" y="188" width="192" height="32" rx="8" class="pll"/><use href="#i-brackets" x="16" y="193" width="22" height="22" class="ico"/><text x="46" y="209" class="tb">code</text><use href="#i-code" x="176" y="196" width="16" height="16" class="ico cmu"/>
+
+<rect x="214" y="24" width="30" height="200" rx="15" class="gate"/>
+<use href="#i-referee" x="217" y="112" width="24" height="24" class="ico"/>
+<text x="229" y="246" text-anchor="middle" class="tb">referee pass</text>
+
+<text x="258" y="16" class="tcap">THE REFEREE</text>
+<use href="#i-check" x="256" y="32" width="18" height="18" class="ico"/><text x="282" y="45" class="txi">a new agent that did</text><text x="282" y="61" class="txi">not write the text</text>
+<use href="#i-check" x="256" y="76" width="18" height="18" class="ico"/><text x="282" y="89" class="txi">the strongest model,</text><text x="282" y="105" class="txi">at the highest effort</text>
+<use href="#i-check" x="256" y="120" width="18" height="18" class="ico"/><text x="282" y="133" class="txi">every claim against</text><text x="282" y="149" class="txi">its source</text>
+<use href="#i-table" x="256" y="164" width="18" height="18" class="ico"/><text x="282" y="177" class="txi">you decide, and answer</text><text x="282" y="193" class="txi">in a table</text>
+<path d="M248 212H428" class="ln" marker-end="url(#s6-a)"/>
+<text x="346" y="232" text-anchor="middle" class="tx">leaves</text>
+
+<text x="8" y="286" class="tcap">EVERY NUMBER CARRIES ITS BASIS</text>
+<text x="8" y="340" class="tbig">80 kWh/m²</text>
+<rect x="176" y="300" width="80" height="26" rx="13" class="pll"/><text x="216" y="317" text-anchor="middle" class="txi">measured</text>
+<rect x="262" y="300" width="80" height="26" rx="13" class="pll"/><text x="302" y="317" text-anchor="middle" class="txi">simulated</text>
+<rect x="348" y="300" width="80" height="26" rx="13" class="pll"/><text x="388" y="317" text-anchor="middle" class="txi">design</text>
+<rect x="176" y="334" width="80" height="26" rx="13" class="pll"/><text x="216" y="351" text-anchor="middle" class="txi">estimated</text>
+<rect x="262" y="334" width="80" height="26" rx="13" class="pll"/><text x="302" y="351" text-anchor="middle" class="txi">literature</text>
+<rect x="348" y="334" width="80" height="26" rx="13" class="pll"/><text x="388" y="351" text-anchor="middle" class="txi">judgement</text>
+<text x="8" y="390" class="tx">one figure, six different claims: the basis word says which</text>
+</svg>
+      <figcaption>The agent that wrote a paragraph defends it, so the referee is always a separate one.</figcaption>
+    </figure>
+    <div class="txt">
+      <p>Each product is saved in its root: a note in the vault, a figure in the data root, code in git, a paper in a repository or on the drive.</p>
+      <p><b>Before anything leaves, a referee pass</b>: a new agent that did not write the text, on the strongest model at the highest effort, checks every claim against its source. You decide, and answer the review in a table.</p>
+      <p><b>Every number that carries weight says what kind of number it is.</b> 80 kWh/m² can be measured, simulated, a design value or a model input; only the basis word tells which.</p>
+      <div class="kit"><span class="lbl">In the kit</span><span class="chip g">Guide 05</span><span class="chip">kit/CLAUDE.md.template</span><span class="chip habit">a habit, not a file</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 ISSUES -->
+<section class="band wrap" id="issues">
+  <div class="band-head">
+    <span class="plate"><svg class="hi"><use href="#i-issue"/></svg></span>
+    <div><p class="eyebrow">Guide 05</p><h2>Decisions as issues</h2></div>
+  </div>
+  <div class="st-body">
+    <figure class="fig">
+<svg class="dg" viewBox="0 0 440 400" role="img" aria-labelledby="s7i-t">
+<title id="s7i-t">One map issue links one ticket per open decision. The first ticket is open and holds its discussion; the second is blocked by the first; the third is closed and records what was decided, when and why. Below: the agent drafts the map and the tickets; you decide.</title>
+<defs><marker id="s7i-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 1L10 5L0 9z" class="fi"/></marker></defs>
+<text x="8" y="16" class="tcap">ONE MAP, ONE TICKET PER DECISION</text>
+<rect x="8" y="88" width="150" height="96" rx="12" class="bxi"/>
+<use href="#i-map" x="22" y="102" width="22" height="22" class="ico"/>
+<text x="52" y="119" class="tn">the map</text>
+<text x="22" y="150" class="tx">links every</text>
+<text x="22" y="167" class="tx">open decision</text>
+<path d="M161 136L234 55M161 136L234 135M161 136L234 215" class="ln"/>
+<rect x="236" y="30" width="196" height="50" rx="10" class="bx"/>
+<use href="#i-issue" x="248" y="40" width="18" height="18" class="ico"/>
+<text x="274" y="53" class="tb">a decision</text>
+<text x="274" y="71" class="tx">open, discussed here</text>
+<path d="M398 82V107" class="ln" marker-end="url(#s7i-a)"/>
+<text x="388" y="99" text-anchor="end" class="tx">blocks</text>
+<rect x="236" y="110" width="196" height="50" rx="10" class="bx"/>
+<use href="#i-issue" x="248" y="120" width="18" height="18" class="ico"/>
+<text x="274" y="133" class="tb">a decision</text>
+<text x="274" y="151" class="tx">waits for the first</text>
+<rect x="236" y="190" width="196" height="50" rx="10" class="bx"/>
+<use href="#i-closed" x="248" y="200" width="18" height="18" class="ico cs"/>
+<text x="274" y="213" class="tb">a decision</text>
+<text x="274" y="231" class="tx">closed: what, when, why</text>
+
+<text x="8" y="290" class="tcap">WHO DOES WHAT</text>
+<rect x="8" y="304" width="40" height="40" rx="10" class="fi"/>
+<path d="M18 316l8 7-8 7M30 334h10" class="lnp" style="stroke-width:3.5"/>
+<text x="62" y="320" class="tb">the agent</text>
+<text x="62" y="338" class="tx">drafts the map and the tickets</text>
+<circle cx="28" cy="376" r="18" class="bxi"/>
+<use href="#i-you" x="17" y="365" width="22" height="22" class="ico"/>
+<text x="62" y="372" class="tb">you</text>
+<text x="62" y="390" class="tx">decide; the ticket keeps the reason</text>
+</svg>
+      <figcaption>A decision written down without its reason is reopened a month later.</figcaption>
+    </figure>
+    <div class="txt">
+      <p>For a design that unfolds over weeks, each open decision gets <b>its own ticket</b> in a tracker such as GitHub, linked from <b>one map issue</b> and from the tickets it blocks.</p>
+      <p>The discussion stays on the ticket. <b>Closing it records what was decided, when and why</b>, so the reason is still there when someone asks.</p>
+      <p>For a meeting, a decisions table at the top of the note does the same job. A blank verdict cell means approved.</p>
+      <div class="kit"><span class="lbl">In the kit</span><span class="chip g">Guide 05</span><span class="chip">kit/templates/meeting-note.md</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 PEOPLE -->
+<section class="band wrap" id="people">
+  <div class="band-head">
+    <span class="plate"><svg class="hi"><use href="#i-people"/></svg></span>
+    <div><p class="eyebrow">Guides 05 and 06</p><h2>One base, several people</h2></div>
+  </div>
+  <div class="st-body">
+    <figure class="fig">
+<svg class="dg" viewBox="0 0 440 424" role="img" aria-labelledby="s7-t">
+<title id="s7-t">Four people around one vault. The owner and an assistant, each with their own agent, write into it; a student reads the concept notes; a partner never touches the vault and uses a tool built from the data instead.</title>
+<defs><marker id="s7-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 1L10 5L0 9z" class="fi"/></marker></defs>
+<rect x="8" y="12" width="168" height="78" rx="12" class="bx"/>
+<use href="#i-you" x="20" y="24" width="26" height="26" class="ico"/><use href="#i-agent" x="50" y="24" width="26" height="26" class="ico"/>
+<text x="88" y="43" class="tb">Owner</text>
+<text x="20" y="76" class="tx">writes; sets the flag</text>
+<rect x="264" y="12" width="168" height="78" rx="12" class="bx"/>
+<use href="#i-you" x="276" y="24" width="26" height="26" class="ico"/><use href="#i-agent" x="306" y="24" width="26" height="26" class="ico"/>
+<text x="344" y="43" class="tb">Assistant</text>
+<text x="276" y="76" class="tx">own agent, own notes</text>
+
+<path d="M110 94C110 124 140 140 160 154" class="ln" marker-end="url(#s7-a)"/>
+<text x="100" y="128" text-anchor="end" class="tx">writes</text>
+<path d="M330 94C330 124 300 140 280 154" class="ln" marker-end="url(#s7-a)"/>
+<text x="340" y="128" class="tx">writes</text>
+
+<rect x="165" y="150" width="110" height="100" rx="16" class="bxi"/>
+<use href="#i-know" x="196" y="162" width="48" height="48" class="ico"/>
+<text x="220" y="234" text-anchor="middle" class="tb">the vault</text>
+
+<path d="M170 252C158 276 130 294 112 314" class="ln" marker-end="url(#s7-a)"/>
+<text x="126" y="282" text-anchor="end" class="tx">reads</text>
+<rect x="8" y="320" width="168" height="74" rx="12" class="bx"/>
+<use href="#i-you" x="20" y="332" width="26" height="26" class="ico"/>
+<text x="56" y="351" class="tb">Student</text>
+<text x="20" y="382" class="tx">fed from concept notes</text>
+
+<rect x="344" y="150" width="88" height="88" rx="16" class="bxi"/>
+<use href="#i-data" x="372" y="162" width="32" height="32" class="ico"/>
+<text x="388" y="222" text-anchor="middle" class="tb">data</text>
+<path d="M388 241V255" class="ln" marker-end="url(#s7-a)"/>
+<rect x="368" y="258" width="40" height="40" rx="10" class="fsoft"/><use href="#i-tool" x="376" y="266" width="24" height="24" class="ico"/>
+<text x="358" y="283" text-anchor="end" class="tx">a tool</text>
+<path d="M388 299V315" class="ln" marker-end="url(#s7-a)"/>
+<rect x="264" y="320" width="168" height="74" rx="12" class="bx"/>
+<use href="#i-you" x="276" y="332" width="26" height="26" class="ico"/>
+<text x="312" y="351" class="tb">Partner</text>
+<text x="276" y="382" class="tx">uses the tool, not the vault</text>
+<text x="220" y="416" text-anchor="middle" class="tx">each note has one owner; others comment or propose</text>
+</svg>
+      <figcaption>Who writes where. The partner's line runs from the data, not from the notes.</figcaption>
+    </figure>
+    <div class="txt">
+      <p>An assistant writes into the same vault, a student learns from its concept notes, a partner uses a tool built from the data.</p>
+      <p><b>Each note has one owner</b>; others comment or propose. In folders shared in real time, the agent changes one passage at a time, never a whole note.</p>
+      <p><b>Data about people or from partners</b>: the data agreement decides first. The agent works on it through scripts that report aggregates, and none of it goes into a public repository.</p>
+      <div class="kit"><span class="lbl">In the kit</span><span class="chip g">Guide 05</span><span class="chip g">Guide 06</span><span class="chip habit">read the starter kit's guide 06 first</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 9 NIGHT -->
+<section class="band wrap" id="night">
+  <div class="band-head">
+    <span class="plate"><svg class="hi"><use href="#i-moon"/></svg></span>
+    <div><p class="eyebrow">Guide 04</p><h2>The night shift</h2></div>
+  </div>
+  <div class="st-body">
+    <figure class="fig">
+<svg class="dg" viewBox="0 0 440 540" role="img" aria-labelledby="s8-t">
+<title id="s8-t">A job from evening to morning: the plan and the grant, keep-awake, the work committed on its own branch, questions written down, a battery pause by the guard, and the morning report. Beside it, the list of what never runs while you are away, and the five parts of the morning report.</title>
+<path d="M30 58V474" class="ln"/>
+<use href="#i-moon" x="18" y="6" width="24" height="24" class="ico"/>
+<text x="50" y="24" class="tb">evening</text>
+
+<circle cx="30" cy="72" r="15" class="dot"/><use href="#i-plan" x="21" y="63" width="18" height="18" class="ico"/>
+<text x="56" y="68" class="tb">the plan</text>
+<text x="56" y="86" class="tx">names every folder it writes to;</text>
+<text x="56" y="102" class="tx">you say yes once</text>
+<circle cx="30" cy="140" r="15" class="dot"/><use href="#i-key" x="21" y="131" width="18" height="18" class="ico"/>
+<text x="56" y="136" class="tb">a grant</text>
+<text x="56" y="154" class="tm">folders, plan, expiry</text>
+<circle cx="30" cy="202" r="15" class="dot"/><use href="#i-laptop" x="21" y="193" width="18" height="18" class="ico"/>
+<text x="56" y="198" class="tb">/keep-awake</text>
+<text x="56" y="216" class="tx">no idle sleep; lid: do nothing;</text>
+<text x="56" y="232" class="tx">battery watched</text>
+<circle cx="30" cy="272" r="15" class="dot"/><use href="#i-code" x="21" y="263" width="18" height="18" class="ico"/>
+<text x="56" y="268" class="tb">the work</text>
+<text x="56" y="286" class="tx">a commit per unit, own branch;</text>
+<text x="56" y="302" class="tx">a pull request, never a merge</text>
+<circle cx="30" cy="342" r="15" class="dot"/><use href="#i-question" x="21" y="333" width="18" height="18" class="ico"/>
+<text x="56" y="338" class="tb">nobody at the keyboard</text>
+<text x="56" y="356" class="tx">a question becomes a note</text>
+<text x="56" y="372" class="tx">for the report</text>
+<circle cx="30" cy="412" r="15" class="kh"/><use href="#i-battery" x="21" y="403" width="18" height="18" class="ico ch"/>
+<text x="56" y="408" class="tb">battery at 20 %</text>
+<text x="56" y="426" class="tx">the guard pauses the job:</text>
+<text x="56" y="442" class="tx">power, or say continue</text>
+<circle cx="30" cy="490" r="15" class="dot"/><use href="#i-sun" x="21" y="481" width="18" height="18" class="ico"/>
+<text x="56" y="486" class="tb">morning</text>
+<text x="56" y="504" class="tx">the report, in two minutes</text>
+
+<rect x="270" y="40" width="162" height="216" rx="12" class="bxi"/>
+<text x="284" y="64" class="tcap">NEVER, WHILE</text>
+<text x="284" y="79" class="tcap">YOU ARE AWAY</text>
+<use href="#i-no" x="284" y="96" width="18" height="18" class="ico"/><text x="310" y="110">a simulation</text>
+<use href="#i-no" x="284" y="128" width="18" height="18" class="ico"/><text x="310" y="142">an account</text>
+<use href="#i-no" x="284" y="160" width="18" height="18" class="ico"/><text x="310" y="174">an install</text>
+<use href="#i-no" x="284" y="192" width="18" height="18" class="ico"/><text x="310" y="206">a rule</text>
+<use href="#i-no" x="284" y="224" width="18" height="18" class="ico"/><text x="310" y="238">a payment</text>
+<text x="270" y="278" class="tx">your own list; the starter</text>
+<text x="270" y="294" class="tx">kit's, plus a payment</text>
+
+<rect x="270" y="320" width="162" height="200" rx="12" class="km"/>
+<text x="284" y="344" class="tcap">MORNING REPORT</text>
+<text x="284" y="370" class="tb">1</text><text x="300" y="370" class="txi">what ran</text>
+<text x="284" y="394" class="tb">2</text><text x="300" y="394" class="txi">refused or asked</text>
+<text x="284" y="418" class="tb">3</text><text x="300" y="418" class="txi">decided for you</text>
+<text x="284" y="442" class="tb">4</text><text x="300" y="442" class="txi">questions, each with</text>
+<text x="300" y="458" class="txi">a recommendation</text>
+<text x="284" y="482" class="tb">5</text><text x="300" y="482" class="txi">what comes next</text>
+</svg>
+      <figcaption>What needs no word from you and can be undone runs at night. Everything else waits for the morning.</figcaption>
+    </figure>
+    <div class="txt">
+      <p>A job that runs while you are away cannot ask, so <b>the questions come first</b>. Its plan names every folder it will write to; you say yes once, and the session writes a grant with an expiry. The guard refuses everything else.</p>
+      <p><b>Keep-awake</b> holds the laptop awake with the lid closed. On battery at 20 %, the guard pauses the job.</p>
+      <p>The job commits on its own branch, never merges, and writes down what it could not ask. The morning report takes two minutes.</p>
+      <p><b>What never runs unattended is your own list.</b> The starter kit's is a simulation, an account, an install, a rule; this kit adds a payment.</p>
+      <div class="kit"><span class="lbl">In the kit</span><span class="chip g">Guide 04</span><span class="chip">kit/hooks/write-scope.example.json</span><span class="chip">kit/skills/keep-awake</span><span class="chip">kit/hooks/guard.py</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 MODELS -->
+<section class="band wrap" id="models">
+  <div class="band-head">
+    <span class="plate"><svg class="hi"><use href="#i-dial"/></svg></span>
+    <div><p class="eyebrow">Guide 05</p><h2>Which model for which work</h2></div>
+  </div>
+  <div class="st-body">
+    <figure class="fig">
+<svg class="dg" viewBox="0 0 440 512" role="img" aria-labelledby="s9-t">
+<title id="s9-t">Routing a task. First the kind of work: scientific synthesis, method design and results against the literature go to Fable 5.1 at the highest effort; visual work, meaning interfaces, images, video and judging anything rendered, goes to Opus 5.5 even when small; everything else goes to Opus 5.5. Then the effort: high by default, the highest when hard, never low. There is no Sonnet or Haiku lane. A decision model such as Jev could make the routing call; that is not part of this kit yet.</title>
+<defs><marker id="s9-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 1L10 5L0 9z" class="fi"/></marker></defs>
+<rect x="170" y="8" width="100" height="34" rx="17" class="bxi"/>
+<text x="220" y="30" text-anchor="middle" class="tb">a task</text>
+<path d="M220 44V60" class="ln" marker-end="url(#s9-a)"/>
+<rect x="100" y="64" width="240" height="38" rx="19" class="bx"/>
+<text x="220" y="88" text-anchor="middle" class="tb">first: what kind of work?</text>
+<path d="M220 104V122" class="ln"/>
+<path d="M76 122H364" class="ln"/>
+<path d="M76 122V142" class="ln" marker-end="url(#s9-a)"/>
+<path d="M220 122V142" class="ln" marker-end="url(#s9-a)"/>
+<path d="M364 122V142" class="ln" marker-end="url(#s9-a)"/>
+
+<rect x="8" y="146" width="136" height="150" rx="12" class="bxi"/>
+<use href="#i-know" x="20" y="158" width="20" height="20" class="ico"/>
+<text x="46" y="173" class="tcap">SCIENCE</text>
+<text x="20" y="200" class="txi">synthesis across</text>
+<text x="20" y="216" class="txi">papers, method</text>
+<text x="20" y="232" class="txi">design, results</text>
+<text x="20" y="264" class="tmb">Fable 5.1</text>
+<text x="20" y="282" class="tx">highest effort</text>
+
+<rect x="152" y="146" width="136" height="150" rx="12" class="bxi"/>
+<use href="#i-deck" x="164" y="158" width="20" height="20" class="ico"/>
+<text x="190" y="173" class="tcap">VISUAL</text>
+<text x="164" y="200" class="txi">interfaces, images,</text>
+<text x="164" y="216" class="txi">video, judging</text>
+<text x="164" y="232" class="txi">anything rendered</text>
+<text x="164" y="264" class="tmb">Opus 5.5</text>
+<text x="164" y="282" class="tx">even when small</text>
+
+<rect x="296" y="146" width="136" height="150" rx="12" class="bxi"/>
+<use href="#i-brackets" x="308" y="158" width="20" height="20" class="ico"/>
+<text x="334" y="173" class="tcap">THE REST</text>
+<text x="308" y="200" class="txi">code, data,</text>
+<text x="308" y="216" class="txi">writing, design</text>
+<text x="308" y="264" class="tmb">Opus 5.5</text>
+
+<path d="M220 298V318" class="ln" marker-end="url(#s9-a)"/>
+<path d="M364 298V318" class="ln" marker-end="url(#s9-a)"/>
+<rect x="152" y="322" width="280" height="62" rx="12" class="bx"/>
+<use href="#i-dial" x="164" y="334" width="22" height="22" class="ico"/>
+<text x="194" y="350" class="tb">then: effort</text>
+<text x="164" y="374" class="tx">high by default, highest when hard</text>
+<text x="8" y="340" class="tb">never low</text>
+<text x="8" y="358" class="tx">a weak pass</text>
+<text x="8" y="374" class="tx">costs a redo</text>
+
+<use href="#i-no" x="8" y="404" width="22" height="22" class="ico cmu"/>
+<text x="40" y="420" class="tb">no Sonnet or Haiku lane</text>
+<text x="210" y="420" class="tx">by design: quality first</text>
+
+<rect x="8" y="442" width="424" height="62" rx="12" class="dash"/>
+<text x="22" y="466" class="txi">a decision model such as Jev can make this call automatically</text>
+<text x="22" y="486" class="tx">the more advanced option, not part of this kit yet</text>
+</svg>
+      <figcaption>The author's routing in November 2026. Re-check when a new model ships.</figcaption>
+    </figure>
+    <div class="txt">
+      <p><b>Route by the kind of work first, then by effort.</b> Raise the effort before you change the model.</p>
+      <ul class="plain">
+        <li><b>Scientific work</b> (synthesis across papers, method design, results against the literature): the research lane, Fable 5.1 at the highest effort.</li>
+        <li><b>Visual work</b> (user interfaces, images and video, and any judgement on something rendered): Opus 5.5, even when the task looks small or sits inside a research task.</li>
+        <li><b>Everything else</b>: Opus 5.5 at high effort, and at the highest effort when it is hard.</li>
+      </ul>
+      <p><b>No Sonnet or Haiku lane</b>, by design. Quality comes first here, and a cheap pass that needs a redo is not cheap.</p>
+      <div class="kit"><span class="lbl">In the kit</span><span class="chip g">Guide 05</span><span class="chip">kit/agents/exec-standard.md</span><span class="chip">kit/agents/exec-hard.md</span><span class="chip">kit/agents/exec-research.md</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- KIT -->
+<section class="band wrap" id="kit">
+  <div class="band-head">
+    <span class="plate"><svg class="hi"><use href="#i-box"/></svg></span>
+    <div><p class="eyebrow">What is done</p><h2>What is in the kit</h2>
+    <p class="sub">Deliberately small. Add what your work needs when you need it; the learn skill says where it goes.</p></div>
+  </div>
+  <div class="inv">
+    <div class="tile"><div class="top"><span class="n">8</span><svg class="hi"><use href="#i-note"/></svg></div><span class="what">guides</span><p>Ten to twenty minutes each. Every station on this page names its guide.</p></div>
+    <div class="tile"><div class="top"><span class="n">1</span><svg class="hi cr"><use href="#i-rules"/></svg></div><span class="what">rules-file template</span><p>About 130 lines: the three roots, standing habits with their reasons, a routing table.</p></div>
+    <div class="tile"><div class="top"><span class="n">4</span><svg class="hi cs"><use href="#i-skills"/></svg></div><span class="what">skills</span><p class="names">skill-library · learn · dictionary · keep-awake</p></div>
+    <div class="tile"><div class="top"><span class="n">1</span><svg class="hi ch"><use href="#i-hooks"/></svg></div><span class="what">hook, the guard</span><p>Originals, the write scope, the battery pause, and a self-test that touches nothing of yours.</p></div>
+    <div class="tile"><div class="top"><span class="n">3</span><svg class="hi"><use href="#i-agent"/></svg></div><span class="what">executor agents</span><p class="names">exec-standard · exec-hard · exec-research</p></div>
+    <div class="tile"><div class="top"><span class="n">4</span><svg class="hi"><use href="#i-note"/></svg></div><span class="what">note templates</span><p>A meeting note with a decisions table, a literature card, a daily note, a handover note.</p></div>
+    <div class="tile"><div class="top"><span class="n">2</span><svg class="hi"><use href="#i-dial"/></svg></div><span class="what">tool notes</span><p>Measuring what is on the desk; the literature stack, with a test for each part.</p></div>
+    <div class="tile"><div class="top"><span class="n">1</span><svg class="hi co"><use href="#i-start"/></svg></div><span class="what">START-HERE.md</span><p>The steps the agent follows to set you up, each explained before it is taken.</p></div>
+  </div>
+
+  <div class="howto">
+    <div>
+      <h3 style="font-size:1.45rem;font-weight:800">How to start</h3>
+      <ol class="steps" style="margin-top:16px">
+        <li><span>Have the first track in place: Claude Code installed and signed in, as in the <a href="https://github.com/KevinMSmith/ai-research-starter-kit">AI research starter kit</a>, and Python 3.8 or later.</span></li>
+        <li><span>Read both guides 06, the starter kit's and this kit's. They decide what the agent may read.</span></li>
+        <li><span>Download <a href="https://github.com/jnwildfire/ai-research-setup-kit">the kit from GitHub</a> into a folder outside your cloud drive.</span></li>
+        <li><span>Open that folder in Claude Code and say:
+          <span class="say"><code id="say">Read START-HERE.md and set me up.</code><button type="button" id="copy">Copy</button></span></span></li>
+        <li><span>In the first week, read guides 02 and 05. Read guide 04 before the first job that runs while you are away.</span></li>
+      </ol>
+    </div>
+    <div class="txt">
+      <p class="note"><svg class="hi ch"><use href="#i-hooks"/></svg><span><b>The set-up ends with a refusal.</b> The agent creates a test file among the originals and tries to change it; the guard must refuse in front of you. A guard that never refused anything may not be running.</span></p>
+      <p class="done">About an hour, in two sessions. The agent asks where your code, data and notes are, lays your rules file, installs the skills and the guard, and changes nothing of yours without asking.</p>
+      <p class="done">Status: draft v0.1.2, not yet released. The guard and the keep-awake script are tested on the author's computer. This map is the kit's <code>docs/index.html</code>.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="wrap">
+  <p><b><a href="https://github.com/jnwildfire/ai-research-setup-kit">AI research setup kit</a></b>, by Johannes Wildfeuer, Technical University of Denmark (DTU), jniwi@dtu.dk. The second track after Kevin Michael Smith's <a href="https://github.com/KevinMSmith/ai-research-starter-kit">AI research starter kit</a>, the first track.</p>
+  <p>The vault's lanes are based on <a href="https://research-memex.org">Research Memex</a> by Xule Lin, licensed under the MIT License. Texts under CC BY 4.0. Made in conversation with Claude Code; the author reads and decides every text before a release.</p>
+</footer>
+
+<script>
+(function(){
+  var b=document.getElementById('copy'),c=document.getElementById('say');
+  if(!b||!c)return;
+  b.addEventListener('click',function(){
+    var t=c.textContent;
+    function sel(){try{var r=document.createRange();r.selectNodeContents(c);var s=window.getSelection();s.removeAllRanges();s.addRange(r);b.textContent='Selected';}catch(e){}}
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(t).then(function(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy';},1800);},sel);
+      }else{sel();}
+    }catch(e){sel();}
+  });
+})();
+</script>
