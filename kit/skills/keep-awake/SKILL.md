@@ -57,9 +57,9 @@ person, or under the project's `.claude/skills/` when installed there. Run it wi
 
 - It cannot stop a sleep that the power button or a critical battery level asks for, and it cannot
   change a lid action that an organisation policy sets (`-Status` and the keeper say so).
-- The guard refuses only the tools it is registered for: file writes, shell commands and note
-  writes, in `kit/hooks/settings.example.json`. Reading goes on during a pause unless the matcher
-  is widened (`kit/hooks/README.md`).
+- The guard refuses only the tools it is registered for: file writes, shell commands, reads (Read,
+  Glob, Grep) and note writes, in `kit/hooks/settings.example.json`. Other tools (a web fetch, a
+  connector's read) go on during a pause unless the matcher is widened (`kit/hooks/README.md`).
 - If the keeper is killed, the lid action stays at "Do nothing" until `-Restore` runs. Step 6
   covers it, and the next start finds the saved values and restores those, not "Do nothing".
 
