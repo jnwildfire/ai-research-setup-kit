@@ -95,9 +95,13 @@ the notes app than in the terminal. All of it goes into one lane, kept usable by
   notes app starts (in the author's vault, a startup script of the Templater plugin). It reads the
   note's own modified-date property, which a plugin updates on every edit, not the file's
   timestamp, because a sync client changes the timestamp without changing the note. The move runs
-  inside the notes app, so links follow the note.
+  inside the notes app, so links follow the note. A notes app left open for weeks never restarts,
+  so the same rule also runs outside it, weekly, as a scheduled script (`kit/tools/archive_notes.py`,
+  with a dry run first and one log line per move).
 - **The agent writes on top, never into the archive**, and never moves notes between the two by
-  hand. Notes are linked by file name, which finds them wherever they are.
+  hand. Notes are linked by file name, which finds them wherever they are. The guard can hold the
+  archive to this (`existing-only`: an archived note may be corrected in place, nothing is filed
+  there by hand).
 
 ## Permanent notes, if you want them
 
@@ -107,6 +111,36 @@ optional. It earns its place if you write to think, because writing an idea in y
 where you notice what you do not yet understand; an agent's draft can start a note, but the final
 text is yours. If you do not work that way, leave the lane out: the wiki and the agent outputs hold
 the rest.
+
+## Reconnaissance, then dictation
+
+A vault built over months holds a lot, and the knowledge that matters most is often not in it: why a
+choice was made, which number is the right one, what a meeting actually settled. Those live in the
+author's head. Two steps bring them in, in this order.
+
+**One reconnaissance pass, read-only.** An agent on the research model reads the whole vault once
+and writes one note, changing nothing else: what the corpus emphasises (the notes most linked, the
+topics most written about), what it claims without a source, what it references but does not hold
+(a document cited and never filed, a link to a note that does not exist), which statements contradict
+each other (and which of those the record already settles), and a **dictation queue**: eight to
+fifteen questions only the author can answer, each naming the note that will receive the answer. In
+the author's vault the first attempt ran out of context; what kept the second within budget was a
+small script that listed the vault one folder at a time, readers per folder that returned short
+digests, and a check of every quotation, character for character, against its note before it was
+kept.
+
+**A dictation lane.** A folder in the inbox (`<inbox>/dictations/`) with a template: the question's
+ID, the note it feeds, and the answer as spoken. The author answers by voice, a question at a time,
+with a dictation program, and does not edit what it writes; the agent reads through the errors. The
+agent then works each answer into the receiving note and links the dictation from it. The later word
+wins: when an answer contradicts an earlier note, the change is recorded with its date and the old
+text kept as replaced, never averaged. Decide once whether the inbox's gate applies to these notes:
+a dictation is the author's own word, not someone else's capture, so the author may let the agent
+integrate it without a second yes.
+
+The order is Kevin Smith's: reconnaissance first, then the author dictates what is missing. His
+guide 02 sets out the dictating and the rule that the later word wins. The lane itself sits in the
+inbox that the Research Memex structure starts from.
 
 ## Four habits that keep a shared vault working
 
@@ -127,3 +161,7 @@ the rest.
   concept.
 - **Map of content**: an index note that links the notes of a topic.
 - **Startup script**: a small script the notes app runs each time it starts.
+- **Reconnaissance pass**: one read-only reading of the whole vault that reports what it emphasises,
+  what it claims without a source, what it lacks, and what only the author can answer.
+- **Dictation queue**: the questions only the author can answer, each with the note that receives
+  the answer.

@@ -108,8 +108,11 @@ path-scoped rule.
 
 Claude Code's documentation says: "target under 200 lines per CLAUDE.md file. Longer files consume
 more context and reduce adherence" (read November 2026). The template in `kit/CLAUDE.md.template` is
-about 130 lines with its placeholders. When yours passes 200, something moves out before anything
-comes in; the `learn` skill (guide 03) does that routing every time you correct the agent. Other
+about 180 lines with its placeholders, in the shape the author's own file reached in November 2026
+when it went from 344 lines to under 200: principles with their reasons, one line for each rule
+that has no trigger, and a routing table to the reference files. When yours passes 200, something
+moves out before anything comes in; the `learn` skill (guide 03) does that routing every time you
+correct the agent. Other
 agents set their own limit: Codex CLI reads at most 32 KiB of `AGENTS.md` text by default (the
 setting `project_doc_max_bytes`). The number differs; the advice to keep the file short does not.
 

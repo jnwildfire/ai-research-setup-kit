@@ -105,25 +105,35 @@ its one-line description is what is always on the desk.
    project sees them).
 2. Copy `kit/skills/dictionary` to `<workspace>/.claude/skills/` (this workspace only; it runs only
    when typed).
-3. Ask whether the person wants the three executor agents (guide 05, "Which model for which work").
+3. If the person has a notes vault, offer the note skills for the workspace, one line each, and copy
+   the ones they want to `<workspace>/.claude/skills/`: `notes-editing` (every vault write),
+   `daily-note`, `task-board`, `process-meeting` with `pre-meeting`, `process-inbox`,
+   `literature-note`, `do-it-later`, `talk`, `progress-report`, `workflow-health`. Each script in
+   them has a configuration block at the top: fill in the vault and the folder names with the person,
+   and run its `--self-test` where it has one.
+4. Ask whether the person wants the three executor agents (guide 05, "Which model for which work").
    If yes, copy `kit/agents/*.md` to `~/.claude/agents/`, and ask which model they trust most for
    scientific reasoning; set `exec-research`'s `model:` to it.
-4. Open `~/.claude/skills/skill-library/SKILL.md` and complete its index: one line per skill now
+5. Open `~/.claude/skills/skill-library/SKILL.md` and complete its index: one line per skill now
    installed (list `~/.claude/skills/` and `<workspace>/.claude/skills/`, one level each).
 
 ## Step 5. The guard
 
 Explain guide 04 in four sentences: a hook is a script Claude Code runs before each action of the
 agent (other agents have their own, with their own format); this one refuses any change to an
-original, asks before any write outside the three roots, and stays silent otherwise; it cannot be
+original, any read in the part of a cloud drive kept online only, and the git commands that lose
+work, asks before any write outside the three roots, and stays silent otherwise; it cannot be
 forgotten the way a sentence in the rules file can.
 
 1. Copy `kit/hooks/guard.py` to `~/.claude/hooks/guard.py`.
-2. Fill in its configuration block from step 2: `CODE_ROOT`, `DATA_ROOT`, `NOTES_ROOT`, and the
-   `IMMUTABLE` list with one line of reason each. If the person writes notes through an Obsidian
-   connector, leave `NOTE_TOOL_PREFIX` as it is; otherwise set it to `""`. Leave `UNATTENDED_ASK`,
-   `PAUSE_FLAG` and `CONTINUE_FILE` as they are, and explain them in one sentence each (guide 04:
-   a background job is refused instead of asked; a battery pause from the keep-awake skill).
+2. Fill in its configuration block from step 2: `CODE_ROOT`, `DATA_ROOT`, `NOTES_ROOT`, `CLOUD_ROOT`
+   (the cloud drive the data and notes roots sit in; leave the placeholder if there is none), and
+   the folders in `immutable_for` with one line of reason each. If the person writes notes through
+   an Obsidian connector, leave `NOTE_TOOL_PREFIX` as it is; otherwise set it to `""`. Ask which
+   branches are never force-pushed or deleted (`PROTECTED_BRANCHES`, `main` and `master` by
+   default). Leave `UNATTENDED_ASK`, `PAUSE_FLAG` and `CONTINUE_FILE` as they are, and explain them
+   in one sentence each (guide 04: a background job is refused instead of asked; a battery pause
+   from the keep-awake skill).
 3. Run `python -I ~/.claude/hooks/guard.py --show-config` and read the output with the person.
 4. Run `python -I ~/.claude/hooks/guard.py --self-test`. Every check must pass; explain that it ran
    synthetic actions against a temporary folder and touched nothing of theirs.
@@ -146,14 +156,16 @@ the set-up in START-HERE.md from step 6" (the file is in the kit's folder; give 
    permission prompt with the guard's reason. Ask the person to answer no. If the guard refuses
    instead, saying that nobody is at the keyboard, the session reports itself as unattended: run
    `--show-config` with the person and see guide 04, "Nobody at the keyboard".
-4. Ask the person to delete the `_guard-test` folder themselves, in File Explorer or Finder; the
+4. If `CLOUD_ROOT` is set: list one folder on the cloud drive outside the roots (`ls`, one level).
+   The guard must refuse with "ask the person for the file". Nothing was downloaded.
+5. Ask the person to delete the `_guard-test` folder themselves, in File Explorer or Finder; the
    agent cannot, by design.
 
 If step 2 changes the file instead of being refused, stop: the guard is not running. Check the path
 and the Python name in `~/.claude/settings.json`, run `/hooks` to see whether Claude Code lists it,
 and tell the person that the originals are unprotected until it is fixed.
 
-## Step 7. Templates, the dictionary and keep-awake (optional)
+## Step 7. Templates, the dictionary, keep-awake and the automation map (optional)
 
 Ask whether the person wants any of these now; all can wait.
 
@@ -168,6 +180,12 @@ Ask whether the person wants any of these now; all can wait.
   lid-close action. Explain that `/keep-awake` sets the lid action to "Do nothing" only while a job
   runs and puts it back afterwards, and that the guard pauses the job on battery at 20 %. On macOS,
   show them `macOS.md` instead; it is a note, not a tested script.
+- **The automation map**: copy `kit/context/automation-map.md` to `<workspace>/.claude/context/`,
+  keep the rows that match what was installed, and add its routing line to the rules file. Every
+  scheduled task, hook or startup script added later gets its row in the same change (guide 04).
+- **The weekly measurement and the archive**, if the person installed `workflow-health`: register
+  `workflow_health.py` (and `kit/tools/archive_notes.py --dry-run` before it) as one weekly task, with
+  the person's yes, and add the task's row to the automation map.
 
 ## Step 8. Hand over
 

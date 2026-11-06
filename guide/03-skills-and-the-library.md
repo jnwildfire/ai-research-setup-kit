@@ -130,13 +130,35 @@ decides which skill may go to `name-only`.
 
 ## Checks: the trigger test
 
-A skill that never fires is a cost without a use. Once a quarter, or after shortening descriptions:
+A skill that never fires is a cost without a use, and a library has a Checks layer of its own: the
+trigger test. Run it after adding skills, after shortening descriptions, and once a quarter:
 
 1. Write one prompt per skill in your own words, the way you would actually ask, for example
    "process the transcript I just dropped into the inbox".
 2. Start a fresh session for each, type the prompt, and see whether the skill you expected is used.
 3. A skill that does not fire on its natural phrase gets that phrase into its description, or a line
    in the library. A skill you never wanted in three months becomes typed-only or is switched off.
+
+The author's test of November 2026 is the worked example: eight prompts, one expected skill each,
+each run as its own session without a person in it (Claude Code's print mode, `claude -p`), started
+in the workspace, with only the tools to load a skill and to read allowed, and a limit of five turns,
+so that a misfire could not change anything.
+
+| Prompt, in the person's words | Skill expected |
+|---|---|
+| "Process this meeting:" followed by two lines of a transcript | `process-meeting` |
+| "Log to today's daily note that the trigger tests ran tonight." | `daily-note` |
+| "Patch the section 'Results' of the note `<path>`: add one line ..." | `notes-editing` |
+| "Make the literature note for the citation key smith2023." | `literature-note` |
+| "Process the inbox." | `process-inbox` (not a broader maintenance sweep) |
+| "Do it later: rename the two notes called ..." | `do-it-later` |
+| "Prepare the weekly." | `pre-meeting` |
+| "From now on, put the meeting date at the start of every meeting note's title." | `learn` |
+
+Every session loaded the expected skill as its first call, loaded no second skill, and wrote nothing.
+That result is what allowed the routing lines for these workflows to leave the rules file: a skill
+that fires on its natural phrase needs no line telling the agent where to look. Keep the eight
+prompts with the library, and run them again after the next change to a description.
 
 ## Writing your own
 

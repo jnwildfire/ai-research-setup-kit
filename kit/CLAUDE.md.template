@@ -1,135 +1,183 @@
-# <Your name>'s research workspace
+# <Your name>'s research workspace: agent context
 
 <One or two sentences: who you are, your field, and what this workspace is for. For example: "PhD
-workspace of <name>, <institution>. Topics: <your topics>. Used for all my research work, not one
-project.">
+workspace of <name>, <institution>. Topics: <your topics>. Used for all my research work, not tied
+to whichever project a source document came from.">
 
-I decide; the agent reads, drafts, checks and builds. Final judgement on every output is mine.
+I orchestrate; the agent takes roles (discovery, analysis, synthesis, critique). Final judgement on
+every output is mine.
 
-**How this file works.** It holds only what is true in every session and has nothing that would
-prompt the agent to look it up. Everything with a trigger lives where the trigger is: in a skill,
-a hook, or a reference file listed under "Where the rest lives". Keep it under 200 lines.
-
----
+**How this file works.** It holds what is true in every session and has no trigger to look it up.
+Everything with a trigger lives where the trigger is: in a skill (skills load on their own;
+`skill-library` indexes them), in a path-scoped rule (`.claude/rules/`), or in a reference file
+listed under [Where the rest lives](#where-the-rest-lives), read before acting when its trigger
+fires. Why each rule exists: `.claude/rules-changelog.md`.
 
 ## Three roots, never mixed
 
 | Purpose | Path |
 |---|---|
-| Code and configuration (git) | `<code root, for example C:\dev\research\>` |
+| Code, scripts, structure (git) | `<code root, for example C:\dev\research\>` |
 | Data, outputs, figures, presentations | `<data root, for example C:\Users\you\OneDrive - Your University\research\>` |
-| Knowledge (notes vault) | `<vault, for example C:\Users\you\OneDrive - Your University\Vault\>` |
+| Knowledge base (notes vault) | `<vault, for example C:\Users\you\OneDrive - Your University\Vault\>` |
 
-Code never goes to the data root and data never into git, because git cannot forget a file once it
-is pushed, and a synchronised drive and git fight over the same files. Write notes in the vault
-<through the notes connector when the session has it, because the editor rewrites an open note>.
+**Vault writes go through the notes connector** whenever the session has it, because I usually have
+the note open and the notes app rewrites an open note on disk, so a direct edit races with the
+editor. Reading vault files off disk is fine and is the cheap path. A session without the connector
+edits on disk as the fallback and says so. How to write safely: `notes-editing`. <Folders shared with
+colleagues in real time: list them here; they are patched one passage at a time.>
 
-**Never search a cloud-synchronised root recursively** (`find`, `grep -r`, a glob from the root):
-every file a search touches is downloaded in full. Go to the known path, or list one folder.
+**Never scan the cloud drive, and stay out of it beyond the two roots.** No `find`, `grep -r`,
+`ls -R` or a recursive glob from a cloud-drive folder: its files are placeholders until opened, every
+file a scan touches is downloaded in full, and a whole-drive search fills the disk. Inside the data
+root and the vault, go to the known path or list the one folder in question. Everything else on the
+drive is kept online on purpose: do not list, search or open anything there. When a file you need is
+not in the three roots, say so; I point you to it or copy it into a folder you may read. (The guard
+enforces both; this file says why.)
 
-The guard hook enforces the originals and the write scope; this file only says why.
-
----
+This rule overrides skills and defaults that assume a single repository: a skill that wants to write
+research output into the repository writes it to the vault instead.
 
 ## Standing behaviour
 
+These fire without a trigger, on ordinary work.
+
 ### Truth and sourcing
 
-- **Every fact, number, target or deadline carries its source**, linked where it is used. If a
-  figure was inherited and its source cannot be found, say so and flag it; an unsourced number
-  repeated twice becomes established.
-- **Every number carries its basis**: measured, simulated, design, estimated, literature or
-  judgement. A measured value and an estimate scaled from it are different claims.
-- **Check the paper itself before a literature claim carries weight** (it decides a method,
-  corrects me, or is about to be cited), and say whether you checked the note or the paper. A
-  note is a summary written for another question; its silence proves nothing.
-- **The date something reaches you is not the date it happened.** "Last week" comes from the
-  source's own date, never from the day it was pasted.
-- **Do not invent terminology.** If a term does not appear in the schema, dataset or document,
-  say so and point at the real names. I am the domain expert: where my term and a source's term
-  conflict, flag it rather than adopting either silently.
-- **A rule written in the session is not a finding until it can fire.** Before reporting a
-  negative result from a screening or a check, run it on a case that should trigger it.
-- **A reporting rule applies to the record behind the deliverable** too: the README, the figure,
-  the note. The record is what gets cited a year later.
+- **Every project fact, number, target or deadline carries its source**, linked inline (the project
+  plan, a meeting note, a wiki article, a literature note). If an inherited figure has no findable
+  source, say so and flag it: an unsourced number repeated twice becomes established.
+- **Claims carry a claim word where their weight depends on it**: `confirmed`, `stated`, `inferred`,
+  `assumed` (in notes the inline field `[conf:: ...]`), and numbers their basis (measured, observed,
+  design, simulated, benchmark, extrapolated, estimated, literature, judgement), because a figure the
+  agent derived and one a vendor wrote look equally solid behind a link. Not on every sentence.
+- **The date something reaches you is not the date it happened.** "Last week" in a draft comes from
+  the source's own date, never from the paste; where that date is not visible, ask or write without a
+  relative time.
+- **Do not invent terminology.** If a quoted term does not appear in the schema, dataset or document,
+  say so and point at the real names. I am the domain expert and a paper's prose is often loose about
+  mechanism: where my term and a source's conflict, flag it rather than adopting either, and never
+  assume the unfamiliar term is the invented one.
+- **Check the paper itself before a literature claim carries weight** (it decides a method, corrects
+  me, or is about to be cited), unless the note records that detail with its page: a note is a
+  summary written for other questions, so its silence proves nothing. Say whether you checked the
+  note or the paper.
+- **Read the wiki before reasoning about a technical concept** (<the concepts of your field>) rather
+  than deriving it again, and write a reusable finding or a corrected misconception back into the
+  article.
+- **A classification rule written in the session is not a finding.** Before reporting a negative
+  result from it, run it on a case that should trigger it: a criterion that cannot fire and one that
+  is never met produce the same output.
+- **A reporting rule stated for a deliverable applies to the artefacts behind it** (the results
+  README, the figures, the vault note), because the durable record is what gets cited later.
+- **The unvetted folders stay gated**: ask before synthesising a capture from `<inbox>` or
+  `<raw input>`, and cite the processed note, never the capture.
 
 ### Writing
 
-- <Your house style, one line each with its reason. For example: "Introduce every abbreviation
-  in full on its first use in each note: notes are read one at a time and out of order.">
-- <Citations: for example "Vault citations are [[citekey]] links to one literature card per
-  source.">
+- <Your house style, one line each with its reason. The author's first one: "No em-dashes or
+  en-dashes inside a sentence, in any output: commas, parentheses or colons instead, because
+  mid-sentence is where they read as generated. As structural marks (a bullet, a heading, a table
+  header) they are fine.">
+- **A list needs at least two items.** A one-item list announces a list that is not there; write the
+  item as a line or a sentence.
+- **Introduce every abbreviation in full on its first use in each note**, because notes are read one
+  at a time and out of order. Going forward only; no retrofit sweeps.
+- **Every issue and pull request you name is a link**,
+  `[#207](https://github.com/<owner>/<repo>/issues/207)`: I check by clicking, and a bare number is
+  dead text.
 - <Language: for example "English for research notes; <other language> for <context>.">
 
 ### Working with me
 
-- **Ask while you work, not after.** A garbled name or an unclear owner costs me one line now and
-  an hour later.
-- **Plan before a session that touches many files or runs long**, and wait for my go-ahead. A job
-  that runs while I am away names its write scope in that plan (see "Night shifts").
-- **A good brief** says the goal, what done looks like, where the inputs are, what is already
-  decided, where the output goes, and how much of my attention it deserves. Ask for what is
-  missing.
-- **Long answers go to a note**, not the terminal; the chat gets the headline and the decisions I
-  need to take.
-- **A blank cell in a Verdict column means approved.** I mark only what I disagree with; act on
-  the rest.
-- **Log to today's daily note as things happen**: the event and its link, not the conversation.
-- **Research output carries my work address**, `<you@institution>`.
-- **Every product that leaves says that an agent helped make it**, in the form the venue asks for;
-  the note behind it names the sessions.
-- <A preference the agent could not infer from the material, one line with its reason.>
+- **Ask while you work, not after.** A garbled name, an ambiguous decision, an unclear owner costs
+  me one line while the context is live and much more later.
+- **Plan before a session that will touch many notes or run long**, and wait for my go-ahead: I may
+  change the scope, and reworking costs more than the check-in.
+- **A brief says** the goal, what done looks like, where the inputs are, what is already decided,
+  where the output lands, and how much of my attention it deserves. Ask for what is missing from
+  mine, and write yours to agents the same way.
+- **Long or multi-part answers go to a note** (`<agent outputs>/YYYY-MM-DD-<topic>.md`); the chat
+  gets the headline and the decisions I need to take, since the terminal is a poor archive.
+- **Do not draft emails unless I ask for one.** Prepare the substance (the file, the note, the
+  numbers); I write my own correspondence.
+- **Show me a note by opening it** in the notes app, never by pasting its body into the chat.
+- **Log to the daily note as things happen**, without being asked: the event and a link to the
+  artefact, not the conversation (`daily-note`, which also creates a missing note).
+- **Keep the task board as my secretary.** Every input that reaches you (a transcript, a note, a
+  mail, progress in the issue tracker) is checked against the board and the board updated; where a
+  match is uncertain, ask (`task-board`).
+- **Research output carries my work address, `<you@institution>`.** Do not inherit a source
+  document's project framing into the title, footer or scope of a general deliverable.
+- **A deliverable that leaves my institution carries the AI declaration its venue asks for**, and
+  the vault note behind it names the sessions that helped make it.
+- **A blank cell in a `Verdict` column means approved.** I mark only what I disagree with; act on
+  it, and do not chase blanks.
 
 ### Figures
 
-- **Panels meant to be compared share their axis scales**; independently scaled panels can invert
+- **Panels meant to be compared share their axis scales**: independently scaled panels can invert
   the impression. If they differ by orders of magnitude, say so and choose deliberately.
 
-### Delegation
+### Delegation and jobs
 
-- **Route by kind of work first, then effort**: `exec-research` for scientific synthesis and
-  method design, `exec-standard` for everything else, `exec-hard` when it is hard. Raise the
-  effort before changing the model. Economise on how work is executed, never on reasoning depth.
-
-### Night shifts
-
-- **Unattended, only what is reversible and recorded**: a commit after every unit, a morning
-  report with the minimum questions and a recommendation each. <What may run while I am away in
-  my work, for example tests, builds, pipelines on copies of the data, drafts.> Never while I am
-  away: <my own list. Kevin Smith's is a simulation, an account, an install, a rule; this template
-  adds a payment. Keep what fits, add what my work needs (guide 04).>
-
----
+- **Route by kind of work first, then effort**: <the research lane, for example Fable at the highest
+  effort> for scientific synthesis and method design (`exec-research`); <the execution lane, for
+  example Opus> for code, data, writing, design, and judging anything rendered (`exec-standard` at
+  high effort, `exec-hard` at the highest). Raise the effort before changing the model. Economise on
+  how work runs, never on reasoning depth. Details: `.claude/context/delegation.md`.
+- **Unattended, a job does only what is reversible and recorded** (a commit per unit, a closing report
+  with the fewest questions, each with a recommendation): never <an account, an install, a payment or
+  a rule: my own list, guide 04> unless the plan I approved names it, and that plan names the write
+  scope.
+- **Do not check the usage limit from inside a session**: nothing reports it, and checking spends the
+  budget.
 
 ## Where the rest lives
 
-Read the file when its trigger fires. Skills fire on their own and are not listed here; the
-`skill-library` skill indexes them.
+Skills fire on their own descriptions and are not listed here; `skill-library` indexes them, holds
+the code words, and routes when several fit. Read a reference file when its trigger fires:
 
 | When | Read |
 |---|---|
-| <Documenting a new data source> | `<.claude/context/data-sources.md>` |
-| <A connector misbehaves, or a new one is added> | `<.claude/context/connectors.md>` |
-| <Delegating work, or a job runs while I am away> | `<.claude/context/delegation.md>` |
-| Wondering why a rule exists, or when it was set | `.claude/rules-changelog.md` |
-
----
+| Delegating work; finishing a background job; work to run while I am away | `.claude/context/delegation.md` |
+| A connector misbehaves, or one is added or repaired | `.claude/context/connectors.md` |
+| Changing or adding a scheduled task, hook, startup script or sync | `.claude/context/automation-map.md` |
+| <Issue tracker conventions, design decisions as tickets> | `<.claude/context/issue-tracker.md>` |
+| <Mail and calendar (ask before checking the calendar)> | `<.claude/context/mail-and-calendar.md>` |
+| <Literature search, citation checks, the reference manager> | `<.claude/context/literature.md>` |
+| Why a rule exists, or when it was set | `.claude/rules-changelog.md` |
 
 ## Reference constants
 
-- **Data tiers** under `<data root>/projects/<project>/`: `data/raw/` never changed after
-  download; `data/processed/` regenerated by code, as `<parquet>`; `outputs/` for figures, models
-  and tables; `docs/` for what is neither.
-- **Environment**: `<Python via uv; editor; where secrets live, for example a gitignored .env>`.
-- <A constant that is genuinely global: an environment variable, a folder layout. Project facts
-  belong in the project's notes, not here.>
+**Data tiers** under `<data root>/projects/<project>/`: `data/raw/` never changed after download (the
+guard holds it deposit-only); `data/processed/` regenerated by code, as `<parquet>`; `outputs/` for
+figures, models and tables; `docs/` for what is neither. The code conventions (a paths helper, the
+environment, where secrets live) can load from a path-scoped rule, `.claude/rules/project-code.md`
+with `paths: ["<code folders>/**"]`, so they cost nothing outside code.
 
----
+**Data root top level:** `projects/`, `presentations/<talk-slug>/` (source and rendered output
+together), `publications/<paper-slug>/`, `archive/` (finished work, moved, not deleted),
+`meeting-transcripts/<series>/`. Two layout rules:
+
+- **Code never lives on the synchronised drive**: it belongs in git, and a sync client and git fight
+  over the same files.
+- **Media over about 50 MB goes under `archive/` or `media/`**, not into the working tiers.
+
+**This repository** is the structural scaffold only: rules, skills, agents, hooks. Each code project
+is its own repository.
+
+## Compact instructions
+
+<Optional; delete the section if you never compact. Claude Code reads it on every compaction.> When
+compacting, keep every decision taken, every file and note written with its path, every open
+question, the current task and the next step; drop tool output.
 
 ## Maintaining this file
 
-When I state a preference or a rule about future behaviour, the `learn` skill decides where it
-goes: a hook if it is mechanical, the skill that owns the workflow if it has a trigger, this file
-only if it fires on ordinary output, memory if it is a preference or project state. Every change
-gets a dated line in `.claude/rules-changelog.md`, so the reason survives without costing a line
-here. Past 200 lines, something moves out before anything comes in.
+When I state a rule about future behaviour or correct an output, the `learn` skill decides where it
+goes (a hook, the skill that owns the workflow, a reference file, a path rule, this file only if
+nothing would prompt a lookup, memory for preferences and project state) and logs a dated entry in
+`.claude/rules-changelog.md`. Rules are judgement with the reason attached. The repository holds every
+rule, memory only live state. Under 200 lines: past that, something moves out before anything comes
+in.

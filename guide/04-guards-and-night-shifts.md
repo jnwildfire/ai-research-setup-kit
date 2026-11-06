@@ -30,14 +30,31 @@ self-test and the live test there.
 
 ## The guard in this kit
 
-`kit/hooks/guard.py` gives every file edit, every shell command and every note write one of three
-verdicts.
+`kit/hooks/guard.py` gives every file edit, every shell command, every read and every note write one
+of three verdicts.
 
 **Deny: the originals.** A folder you list as immutable holds originals: raw data as downloaded,
 transcripts as recorded. The guard refuses any action that would change, overwrite, move or delete a
 file there, and tells the agent why; the agent then proposes the correction downstream, in processed
 data or in the note. Adding a new file is allowed, because a new delivery is a new original. A
-second strictness, `never`, refuses every write at all, for a folder that is only ever filled by you.
+second strictness, `never`, refuses every write at all, for a folder that is only ever filled by you
+(a staging folder in the inbox). A third, `existing-only`, lets a file there be changed in place but
+refuses anything new, any move and any delete, for an archive that only a script fills: an archived
+note can still be corrected, but nothing is filed there by hand.
+
+**Deny: reads outside the roots on a cloud drive.** A cloud drive keeps most files online only, as
+placeholders; listing or opening one downloads it. Your data and notes roots sit on the drive and
+stay readable; the rest of it is closed to the agent's Read, Glob and Grep and to the shell's
+listing and reading commands, with "ask the person for the file". A recursive search started above
+the drive is refused too, since it would reach into it. The list of blocked folders is
+configurable (`read_blocked_for` in the guard), and a plan can open one file or one folder for a job
+(below).
+
+**Deny: the git commands that lose work.** A force push to a protected branch (`main` by default),
+`git reset --hard`, `git clean` (its dry run passes), `git branch -D`, deleting a protected branch,
+and `git checkout -- .` or `git restore .` are refused, each with its reason and the safe
+alternative. Deleting any other branch is asked. These are the commands whose damage cannot be
+undone from the repository itself.
 
 **Ask: outside the roots.** A write anywhere outside your three roots and the agent's working folders
 (its own settings folder, the temporary folder) is not refused but asked: Claude Code shows you a
@@ -47,7 +64,8 @@ In auto mode, where a classifier approves most actions on its own, the documenta
 hook's "ask" goes to you and not to the classifier.
 
 **Pass: everything else.** Inside the roots, the guard stays silent, and Claude Code's own permission
-settings decide as if the guard were not there. Reading is never restricted.
+settings decide as if the guard were not there. Reading is restricted only on the cloud drive outside
+your roots.
 
 Two situations change these verdicts, both described below: nobody at the keyboard, and a battery
 running low.
@@ -63,18 +81,22 @@ foresaw. For a write the job needs, the question belongs before the job, not dur
 So every job that may run unattended names in its plan the folders it will write to and where it
 saves its results. Anything outside the roots is asked for there, in the plan, and you answer once.
 After your yes, the session writes a **grant**: a small file with the folders, the plan it belongs
-to, and an expiry time (`kit/hooks/write-scope.example.json`). The guard reads it from the job's
-own folder (the folder in `CLAUDE_JOB_DIR`, see below) or, for one attended session, from
-`.claude/write-scope.local.json` in the project. A grant widens the roots; it never opens an
+to, and an expiry time (`kit/hooks/write-scope.example.json`). Its `write` list opens folders to
+write in; its `read` list opens exact files in a blocked folder, or a whole folder written with `/**`
+at the end, so a job that needs one document from the closed part of the drive names it in the plan
+instead of being refused at night. The guard reads the grant from the job's own folder (the folder in
+`CLAUDE_JOB_DIR`, see below) or, for one attended session, from `.claude/write-scope.local.json` in
+the project, and ignores it once `expires` has passed. A grant widens the roots; it never opens an
 immutable folder. The plan is the single place where you grant, and the prompt stays the fallback
 when you are at the keyboard.
 
 ## Nobody at the keyboard: two variables a background job carries
 
 On the author's computer, Claude Code sets two environment variables in a background job, a
-session that runs on without you. Neither was found in Claude Code's documentation read on
-5 November 2026, so the kit treats them as observed behaviour, which a later version may change,
-and falls back to the documented behaviour when they are absent.
+session that runs on without you. They are Claude Code's own: nothing in the author's configuration
+sets them (checked on 5 November 2026). Neither was found in Claude Code's documentation read on
+that day, so the kit treats them as observed behaviour, which a later version may change, and falls
+back to the documented behaviour when they are absent.
 
 - **`CLAUDE_JOB_DIR`**: a folder Claude Code gives the job for its own files. The kit keeps the
   job's grant there, as `write-scope.json`, so the grant ends with the job. Without the variable,
@@ -98,9 +120,11 @@ the paths written on the command line. A command built from variables it cannot 
 through. So the guard is a net under the rules, not a sandbox. Claude Code's permission prompts, and
 in auto mode its classifier, are the second net, and the rules file still says why each rule exists.
 
-Test the guard before you trust it: `python guard.py --self-test` runs about sixty synthetic actions
+Test the guard before you trust it: `python guard.py --self-test` runs about 150 synthetic actions
 against a temporary folder tree, and `kit/hooks/README.md` gives a live test that ends with the
 agent refused in front of you. A guard that has never refused anything may simply not be running.
+A test that cannot fail proves nothing either: when the guard was built, each rule was switched off
+in turn, and its cases had to fail.
 
 ## Night shifts: your own list
 
@@ -179,6 +203,46 @@ it made:
    can mean "as recommended".
 5. **Next**: what the next session should start with.
 
+## The automation map
+
+The guard, a weekly measurement, an archive script, a startup script in the notes app, a hook that
+backs up the agent's memory, the keep-awake keeper: each runs without a session asking for it, and
+each fails quietly. A scheduled task that stopped, or a hook that points at a moved script, says
+nothing in any session, because no session asked for it. So the setup keeps one table of them,
+`kit/context/automation-map.md`: per automation, what it does, its trigger, where it lives, what it
+writes, what depends on it, how to see its last run, and what else must change when it changes. The
+rules file routes to it with one line ("changing or adding a scheduled task, hook, startup script or
+sync"), and its rule is short: **when you change an automation, update its row and whatever depends
+on it, in the same change.** A row that leaves a trace (a log line, a task's last result, a commit)
+can be checked by the weekly measurement, so a stopped automation shows within a week.
+
+## Before a compaction
+
+When a session's context fills up, Claude Code compacts it: the conversation is replaced by a
+summary, and whatever the summary leaves out is gone. The author's setup treats that as a step to
+prepare, not an event to wait for.
+
+- **Auto-compact off.** With `"autoCompactEnabled": false` in `~/.claude/settings.json` a session
+  compacts only when you type `/compact` (idle compaction is off with it, by the settings reference).
+  A compaction then happens when you choose it, after the save step below, never in the middle of a
+  piece of work.
+- **The save step before a manual compact.** Rules and corrections go to their files through the
+  `learn` skill, knowledge to the vault (the note the work belongs in, the daily note's progress
+  log), the state of the work to memory. Then `/compact` with focus instructions: keep every decision
+  taken, every file and note written with its path, every open question, the current task and the
+  next step; drop tool output.
+- **The documented lever is a section of the rules file.** Claude Code's documentation (its page on
+  costs, read 6 November 2026) describes a "Compact instructions" section in `CLAUDE.md` that shapes
+  every compaction, an automatic one at the window's end included; the template has it as an
+  optional section. A `PreCompact` hook cannot do that: by the hooks reference read the same day, it
+  receives the trigger (manual or automatic) and the instructions typed after `/compact`, and can
+  only block the compaction (exit code 2, or a "block" decision); what it prints does not reach the
+  summary. A `SessionStart` hook on the `compact` source can add context after a compaction.
+- **A long session plans its own end.** Past about 60 % of the context window, the session runs the
+  save step, writes a handover (done, next, where things stand) and suggests a fresh session. The
+  `workflow-health` script prints a session's peak context without a model, and its weekly report
+  lists the sessions that passed the line.
+
 ## Terms used
 
 - **Hook**: a script that the agent's program runs before an action of the agent, and that can
@@ -186,8 +250,10 @@ it made:
 - **Guard**: the hook in this kit, `guard.py`.
 - **Immutable folder**: a folder of originals, which the guard keeps unchanged.
 - **Roots**: the three top folders for code, data and knowledge (guide 01).
-- **Grant**: a file that lets one job or session write to folders outside the roots, after you
-  approved the plan that names them.
+- **Grant**: a file that lets one job or session write to folders outside the roots, or read named
+  files in a blocked folder, after you approved the plan that names them.
+- **Read block**: the folders on a cloud drive outside your roots, which the guard keeps the agent
+  from listing, searching or opening.
 - **Auto mode**: a Claude Code mode in which a classifier approves most actions without a prompt.
 - **Background job**: a session that runs without you at the keyboard.
 - **Environment variable**: a named value a program hands to the programs it starts, such as
@@ -196,3 +262,7 @@ it made:
   nothing.
 - **Pause flag**: the file the battery watch writes, which makes the guard refuse every action.
 - **Pull request**: a proposed set of changes to a repository, which a person reviews and merges.
+- **Automation map**: the table of everything that runs without a session asking for it, with what
+  depends on each.
+- **Compaction**: Claude Code replacing a long conversation with a summary, to free the context
+  window.
