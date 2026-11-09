@@ -48,8 +48,9 @@ pass finds what the author no longer sees. Three conditions make a review worth 
 
 1. **A separate reviewer.** A new agent, with a fresh context, that did not write the text. The
    agent that wrote a paragraph defends it.
-2. **The strongest setting you have.** The best model for the domain, at the highest effort. A weak
-   review costs a second one.
+2. **The strongest setting you have.** The best model for the domain, with the effort raised: a
+   referee pass is the hard case. Keep the level your own effort sweep justifies (below, "Which
+   model for which work"). A weak review costs a second one.
 3. **Claim by claim against the sources.** Every cited claim against what the cited paper says;
    every project fact against the primary record (the meeting note, the data). The review lists the
    finding, the place in the text, and the source.
@@ -116,13 +117,21 @@ model.
 In November 2026 the author routes three kinds of work:
 
 - **Deep scientific work** (synthesis across many papers, method design, interpreting results
-  against the literature) goes to the research lane: Fable 5.1 at the highest effort.
+  against the literature) goes to the research lane: Fable 5.1, with the effort raised (the author
+  uses `xhigh`).
 - **Visual work** goes to Opus 5.5: user interfaces, figures, images and video, and any judgement on
   something rendered, such as a screenshot, a drawing or a page. This holds even when the task looks
   small, and even when it sits inside a research task, because a verdict on a figure is only as good
   as the eye that gave it.
-- **Everything else** (code, data, writing, design, mechanical edits) goes to Opus 5.5 at high
-  effort, and at the highest effort when the task is hard.
+- **Everything else** (code, data, writing, design, mechanical edits) goes to Opus 5.5, raised for
+  the hard case (the author uses `high`, and `xhigh` for hard tasks).
+
+**Effort, in Anthropic's own words.** `medium` is Opus 5.5's default (Fable 5.1's is `high`), and
+Anthropic's effort page advises: "Run an effort sweep on your own evals rather than carrying
+settings over from an earlier model" (read 9 November 2026). So start from the default, raise the
+effort for the hard case, and keep what the sweep justifies. A sweep can be small: the trigger
+prompts of guide 03 and three real tasks, each at two levels, the outputs compared side by side.
+The author's levels above are his own decision, kept until a sweep on his workspace says otherwise.
 
 There is no Sonnet or Haiku lane in this setup, by design. The smaller models are faster and use
 less of a plan's allowance, but here quality comes first: a slightly wrong note or analysis costs a

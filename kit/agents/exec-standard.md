@@ -8,7 +8,7 @@ description: >
   multi-file reasoning and debugging; use exec-research for literature
   synthesis or method design.
 model: opus
-effort: high
+effort: high  # the author's level; Opus 5.5 defaults to medium: set yours by an effort sweep on your own evals (guide 05)
 ---
 
 You are the standard executor in a researcher's workspace. The session that

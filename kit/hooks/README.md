@@ -16,16 +16,18 @@ script here: not a hook, but a check the agent runs on a finished note before it
 
 | What the call does | Verdict |
 |---|---|
-| Adds a new file to a folder of originals (`deposit-only`: raw data, transcripts) | pass: a deposit |
+| Adds a new file or folder to a folder of originals (`deposit-only`: raw data, transcripts) | pass: a deposit, by any tool, `mkdir -p` and `cp` included |
 | Changes, overwrites, moves or deletes a file there | refused, with the reason |
 | Writes, moves, copies or deletes anything in a `never` folder (a staging folder only you fill) | refused |
-| Creates, moves, copies or deletes in an `existing-only` folder (an archive a script fills); changing a file in place passes | refused |
-| Writes inside the roots, `~/.claude`, the temporary folder, a job's own folder, a granted folder | pass, silently: Claude Code's own permissions decide |
+| Creates, moves or deletes in an `existing-only` folder (an archive a script fills); changing a file in place, or copying one out, passes | refused |
+| Writes inside the roots, `~/.claude`, the temporary folder, a job's own folder, a granted folder or file | pass, silently: Claude Code's own permissions decide |
 | Writes anywhere else | ask |
-| Reads on the cloud drive outside the data and notes roots: Read, Glob, Grep, `ls`, `cat`, `find`, `Get-ChildItem`, `Get-Content` and kin, a copy's source, a recursive search started above the drive | refused: "ask the person for the file" |
-| A path granted in a grant file, before its `expires` | pass: `write` opens a folder, `read` an exact path or a folder ending in `/**` |
+| Reads on the cloud drive outside the data and notes roots: Read, Glob, Grep, `ls`, `cat`, `find`, `Get-ChildItem`, `Get-Content` and kin, a copy's source, a recursive search started above the drive, a `cd` or `git -C` into it, any command's argument that names a place in it, a path into it in `python -c` or a heredoc to an interpreter | refused: "ask the person for the file" |
+| Reads of a secrets file: `.env`, `.env.*` (not `.env.example` and kin), `~/.ssh/**`, `~/.claude/.credentials.json`, `*.pem`, `*.key`, `*credentials*` and `*token*.json` (not source code) | refused: "secrets are not for the model to read"; listing the name, copying the file and a script that loads it pass |
+| A path granted in a grant file, before its `expires` | pass: a folder opens with its subfolders, a file alone, for `read` and `write` alike |
 | `git push --force` or `+ref` to a protected branch, `git reset --hard`, `git clean` (the dry run `-n` passes), `git branch -D`, deleting a protected branch, `git checkout -- .`, `git restore .` | refused, with the reason per command |
-| Deleting any other branch (`git branch -d`, `git push --delete`, `git push origin :x`) | ask |
+| `git branch -d` (git itself refuses a branch that is not merged) and `git worktree remove` | pass |
+| Deleting a remote branch (`git push --delete`, `git push origin :x`), or a local one whose name the guard cannot read (`git branch -d "$b"`) | ask |
 | Any call while the battery pause stands (writing the continue file excepted) | refused: "paused: battery at N %, connect power or say continue" |
 | An ask while `CLAUDE_CODE_SESSION_ATTENDED=0` | refused, with "write this down as a question for the morning report" |
 
@@ -42,7 +44,7 @@ script here: not a hook, but a check the agent runs on a finished note before it
    files and the protected branches, as the guard sees them.
 4. Run `python -I ~/.claude/hooks/guard.py --self-test`. It builds a temporary folder tree, sends
    about 150 synthetic tool calls through the same code the hook uses, and must end with every check
-   passed ("156 of 156 checks passed" on Windows, one fewer elsewhere). It does not touch your
+   passed ("209 of 209 checks passed" on Windows, one fewer elsewhere). It does not touch your
    folders, and your session's own settings do not change its result.
 5. Merge `settings.example.json` into `~/.claude/settings.json` with the absolute path to the
    script. Merge, do not overwrite: the file may hold other settings. If your Python answers only
@@ -101,11 +103,18 @@ killed cannot leave the agent paused for good.
 
 ## Limits
 
-The guard matches shell commands by pattern; it does not run them in its head the way a shell
-would. A script that writes or reads files itself is one command to it, and a heredoc line that
-reads like a command on a blocked path is refused too. A force push whose branch the guard cannot
-read is refused: name the branch. It is a net under the rules, not a sandbox, and Claude Code's
-permission prompts stay the second net. Inside the roots it stays silent rather than answering
+The guard parses shell commands the way the shell reads them (Bash for the Bash tool, PowerShell
+for the PowerShell tool and for `pwsh -Command`): quotes, escapes, `$( )`, heredocs, script blocks,
+redirections, and variables from the environment or from an assignment earlier in the same
+command. Only a verb's path arguments and the redirect targets are paths, so a quoted commit
+message, a sed script or a grep pattern is never taken for one. The write scope is not inspected
+inside a `-Command` body or a heredoc; the folders of originals are also protected by a substring
+scan over the whole text, so a heredoc that writes `rm` on an original is still refused. A script
+that writes or reads files itself is one command to it. A word whose start it cannot know
+(`"$X/file"`) is no path; one with a known folder before the unknown part counts as that folder.
+A force push whose branch the guard cannot read is refused: name the branch. It is a net under the rules, not a sandbox, and Claude Code's
+permission prompts stay the second net, and Claude Code's own sandbox, where it exists (macOS,
+Linux, WSL2), is the stronger one (guide 04). Inside the roots it stays silent rather than answering
 "allow", because "allow" would also skip the auto-mode classifier for edits of your settings and
 of the guard itself.
 

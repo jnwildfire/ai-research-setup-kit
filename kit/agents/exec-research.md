@@ -8,7 +8,7 @@ description: >
   reasoning decides the result. Not for code, design or mechanical work
   (exec-standard, exec-hard).
 model: opus  # the model you trust most for scientific reasoning; guide 05, "Which model for which work"
-effort: xhigh
+effort: xhigh  # the author's level; Opus 5.5 defaults to medium: set yours by an effort sweep on your own evals (guide 05)
 ---
 
 You are the deep-research executor in a researcher's workspace. Tasks reach

@@ -7,7 +7,7 @@ description: >
   escalated. Literature synthesis, research methodology and scientific
   critique go to exec-research.
 model: opus
-effort: xhigh
+effort: xhigh  # the author's level; Opus 5.5 defaults to medium: set yours by an effort sweep on your own evals (guide 05)
 ---
 
 You are the high-effort executor in a researcher's workspace. Tasks reach you

@@ -1,5 +1,41 @@
 # Changelog
 
+## v0.1.3 (unreleased, 9 November 2026)
+
+The fourth round: the author's answers of 9 November 2026 to the questions of the night shift, and a
+review of v0.1.2 by Kevin Smith's Claude (points 1 to 3 accepted, point 4 taken as information).
+
+- **The guard parses shell commands instead of matching patterns.** Bash and PowerShell are read the
+  way the shell reads them (quotes, escapes, `$( )`, heredocs, `pwsh -Command` bodies, script blocks,
+  variables from the environment or set earlier in the same command); only a verb's path arguments
+  and the redirect targets count as paths, so a quoted `$env:TEMP`, a sed script, a grep pattern or a
+  heredoc line no longer trips it. The write scope is never inspected inside a `-Command` body or a
+  heredoc; the folders of originals keep a substring scan over the whole text as a backstop. A
+  `cd`, `git -C` or any argument into a blocked folder is refused, and so is a blocked path written
+  in code handed to an interpreter. Before the change it was replayed on the author's 30,380
+  distinct shell commands of five days.
+- **Grants by folder or file**: a folder opens with its subfolders, a file alone, for reading and
+  for saving alike; `python guard.py --grant read|write PATH...` writes the grant file.
+- **Secrets are not for the model to read** (review point 3): `.env`, `.env.*`, `~/.ssh/**`,
+  `~/.claude/.credentials.json`, `*.pem`, `*.key`, `*credentials*`, `*token*.json` are refused to
+  Read, Grep and the shell's readers; a script may still load them, listing a name and copying the
+  file pass, source code and `.env.example` and kin pass.
+- **git**: `git branch -d` (git itself refuses an unmerged branch) and `git worktree remove` pass; a
+  remote branch deletion, or a local one whose name the guard cannot read, asks; `branch -D` stays
+  refused. A deposit is any new file or folder, so `mkdir -p` and `cp` into a deposit folder pass; a
+  copy out of an `existing-only` archive is a read. Self-test 209 of 209 on Windows; each new rule
+  switched off turns its cases red.
+- **Guide 04**: grants by folder or file; `permissions.denyInsteadOfPrompting` (Claude Code 2.1.319,
+  scope unconfirmed) as the thing to test on the next night shift through a launch-time settings
+  file, with the guard's unattended refusal kept as the fallback (review point 2); Claude Code's
+  sandbox exists on macOS, Linux and WSL2, not on native Windows, where the guard is the substitute
+  (review point 4).
+- **Effort, in Anthropic's words** (review point 1): guide 05 and the three agents no longer say
+  "the highest effort"; `medium` is Opus 5.5's default, run an effort sweep on your own evals rather
+  than carrying settings over, raise for the hard case and keep what the sweep justifies.
+- **Credits**: "reconnaissance first" was said by Kevin Smith in the seminar of 3 November 2026, not
+  in his public kit; the talk rules follow Patrick Winston's lecture, now named.
+
 ## v0.1.2 (unreleased, 6 November 2026)
 
 The third round: the author's own setup was restructured on the night of 5 to 6 November 2026 along

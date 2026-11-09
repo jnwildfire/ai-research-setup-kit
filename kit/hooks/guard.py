@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Guard hook for Claude Code: protect the originals, keep the agent's writes inside your roots and
-its reads out of the part of a cloud drive you keep online only, and refuse the git commands that
-lose work.
+its reads out of the part of a cloud drive you keep online only and out of secrets files, and refuse
+the git commands that lose work.
 
 Claude Code runs this script before every file edit, every shell command, every read (Read, Glob,
 Grep) and, if you register them, every note write through a notes connector (the setting is in
@@ -9,10 +9,10 @@ settings.example.json next to this file). It receives the planned tool call as J
 and gives one of three verdicts:
 
     deny   the call would change an original (a folder listed in IMMUTABLE), read a file in a
-           blocked folder (READ_BLOCKED), or run a git command that loses work. Exit code 2: the
-           call is refused and the reason is shown to the agent, which then explains and proposes
-           another way. No setting and no answer of yours lets the call through.
-    ask    the call would write outside your roots and outside any grant, or delete a branch.
+           blocked folder (READ_BLOCKED) or a secrets file (SECRETS), or run a git command that
+           loses work. Exit code 2: the call is refused and the reason is shown to the agent, which
+           then explains and proposes another way. No setting and no answer of yours lets it through.
+    ask    the call would write outside your roots and outside any grant, or delete a remote branch.
            Claude Code shows you a permission prompt. In auto mode the prompt decides, not the
            auto-mode classifier.
     pass   everything else. The script stays silent and Claude Code's own permission settings decide,
@@ -22,25 +22,40 @@ The rules, as the configuration block below sets them:
 
 | What | Verdict |
 |---|---|
-| a folder of originals, "deposit-only" (raw data, transcripts) | a new file passes; changing, overwriting, moving or deleting one is refused |
+| a folder of originals, "deposit-only" (raw data, transcripts) | a new file or folder passes; changing, overwriting, moving or deleting one is refused |
 | a folder of originals, "never" (a staging folder that only you fill) | every write, move, copy or delete is refused |
-| a folder of originals, "existing-only" (an archive that a script fills) | changing a file in place passes; a new file, a move, a copy or a delete is refused |
-| writes inside the roots, ~/.claude, the temporary folder, the job's folder, a granted folder | pass |
+| a folder of originals, "existing-only" (an archive that a script fills) | changing a file in place and copying one out pass; a new file, a move or a delete is refused |
+| writes inside the roots, ~/.claude, the temporary folder, the job's folder, a granted folder or file | pass |
 | writes anywhere else | ask |
-| reads inside a blocked folder (the cloud drive outside your data and notes roots) | refused, "ask the person for the file"; a granted path passes |
+| reads inside a blocked folder (the cloud drive outside your data and notes roots) | refused, "ask the person for the file"; a granted folder or file passes |
+| reading a secrets file (.env, .env.*, ~/.ssh, ~/.claude/.credentials.json, *.pem, *.key, *credentials*, *token*.json) | refused, "secrets are not for the model to read"; a script may still load it |
 | git: force push to a protected branch, reset --hard, clean, branch -D, deleting a protected branch, checkout -- . and restore . | refused |
-| git: deleting any other branch | ask |
+| git: branch -d (git itself refuses an unmerged branch), worktree remove | pass |
+| git: deleting a remote branch, or a local one whose name the guard cannot read | ask |
 | the keep-awake battery flag ~/.claude/keep-awake/pause | every call refused until power is back or the person says continue |
 
-Reads are checked for Read, Glob and Grep, for the shell's listing and reading commands (ls, dir,
-cat, type, find, Get-ChildItem, Get-Content and their kin, a copy's source), and for a recursive
-search started above a blocked folder, which would reach into it.
+Inside the roots everything passes, recursive search included.
+
+Reads are checked for Read, Glob and Grep, for the shell's readers and listers (cat, grep, sed, ls,
+find, Get-Content, Get-ChildItem and their kin, a copy's source), for a recursive search started
+above a blocked folder, for a cd, Set-Location or git -C into one, for any other command's argument
+that names a place in one (pdftotext x.pdf, python script.py x), and for a path into one written in
+code handed to an interpreter (python -c, a heredoc to python or node).
+
+Shell commands are parsed the way the shell reads them (Bash for the Bash tool, PowerShell for the
+PowerShell tool and for `pwsh -Command`): quotes, escapes, $( ), heredocs, script blocks and
+redirections; variables from the environment and from assignments earlier in the same command are
+expanded; only a verb's path arguments and the redirect targets count as paths, so a quoted
+message, a sed script or a grep pattern is never mistaken for one. The write scope is never
+inspected in a -Command body or a heredoc; the folders of originals are also protected by a
+substring scan over the whole text (section "the substring backstop").
 
 A grant widens the roots for one job or one session: a small JSON file that the session writes only
-after you approved a plan that names the extra folders to write and the exact files to read
-(guide 04, write-scope.example.json). A `write` folder may be written and read below it. A `read`
-entry is an exact path; an entry ending in `/**` opens that folder and everything below it. An
-expired grant grants nothing, and no grant opens a folder of originals.
+after you approved a plan, or pointed to a folder or file yourself (guide 04,
+write-scope.example.json; `--grant` writes it). A folder (an entry ending in /, one that exists as a
+folder, or one without an extension that does not exist yet) opens everything below it; a file
+opens that file alone; the same for `read` and `write`. A write grant may also be read. An expired
+grant grants nothing, and no grant opens a folder of originals or a secrets file.
 
 Two situations change the verdicts (guide 04):
 
@@ -53,15 +68,17 @@ Two situations change the verdicts (guide 04):
                              the continue file, ends the pause.
 
 What the guard cannot see: a script that writes or reads files itself (`python make_figures.py`) is
-one shell command to the guard, and only the paths written on the command line are checked. Shell
-commands are matched by pattern, not parsed the way a shell would, so a heredoc line that reads
-like a command on a blocked path is refused too (write such a file with the Write tool). The guard
-is a net under the rules, not a sandbox; Claude Code's permission prompts and, in auto mode, its
-classifier are the second net.
+one shell command to the guard; only the paths on the command line, and literal blocked paths in
+inline code, are checked. A word whose start the guard cannot know (`"$X/file"` with X unknown) is no
+path; one with a known folder before the unknown part counts as that folder. `grep -r` in a folder
+that holds a .env reads it unseen. The guard is a net under the rules, not a sandbox; Claude Code's
+permission prompts and, in auto mode, its classifier are the second net, and on macOS, Linux and
+WSL2 Claude Code's own sandbox is the stronger one (guide 04).
 
 Set the configuration block below, then check it:
-    python guard.py --show-config     the resolved roots, folders, grants and branches
-    python guard.py --self-test       about 150 synthetic tool calls against a temporary folder tree
+    python guard.py --show-config     the resolved roots, folders, secrets, grants and branches
+    python guard.py --self-test       about 220 synthetic tool calls against a temporary folder tree
+    python guard.py --grant read|write PATH... [--hours N] [--plan TEXT]   record a grant
 Test one call by hand (bash); a refusal prints the reason and exits with 2:
     echo '{"tool_name":"Edit","tool_input":{"file_path":"<an original>"}}' | python guard.py; echo "exit $?"
 
@@ -70,8 +87,8 @@ Standard library only; Python 3.8 or later.
 Derived from guard_raw.py in Kevin Michael Smith's ai-research-starter-kit
 (https://github.com/KevinMSmith/ai-research-starter-kit), Copyright (c) 2026 Kevin Michael Smith, MIT
 licence, by way of the author's own guard for immutable folders; the write scope, the grants, the
-read block, the git guardrails and the self-test are added. Copyright (c) 2026 Johannes Wildfeuer,
-MIT licence (see LICENSE.md).
+read block, the secrets rule, the git guardrails, the shell parser and the self-test are added.
+Copyright (c) 2026 Johannes Wildfeuer, MIT licence (see LICENSE.md).
 """
 from __future__ import annotations
 
@@ -125,6 +142,9 @@ def immutable_for(data, notes):
         # (notes + "/<inbox>/_later", "never", "it is the person's staging area and is never touched"),
         # (notes + "/<agent outputs>/Archive", "existing-only",
         #  "notes reach the archive only through the archive script; write new notes on top"),
+        # Deposit folders for the sources notes are built on (mail as received, partner documents):
+        # (data + "/mail", "deposit-only", "a filed mail is kept as received, because notes cite it"),
+        # (data + "/sources", "deposit-only", "a source document is kept as received"),
     ]
 
 
@@ -139,9 +159,33 @@ def read_blocked_for(cloud, data, notes):
     ]
 
 
+def secrets_for(home):
+    """Files whose content is not for the model (point 3 of a review of this kit, November 2026).
+
+    names    patterns on the file name, matched without regard to case
+    except   names that look like a secret but are the committed, value-free templates
+    folders  everything below them; files: exact paths
+    Reading them through Read, Grep or a shell reader (cat, Get-Content, a copy's source) is refused.
+    A process may still load them: python-dotenv reads .env inside the script, out of the guard's
+    sight, and that is the intended route. Listing names (Glob, ls of a folder) is not refused,
+    except inside a secrets folder. No grant opens them.
+    """
+    return {
+        "names": [".env", ".env.*", "*.pem", "*.key", "*credentials*", "*token*.json"],
+        "except": [".env.example", ".env.sample", ".env.template", ".env.dist"],
+        "folders": [home + "/.ssh"],
+        "files": [home + "/.claude/.credentials.json"],
+    }
+
+
+SECRETS_REASON = ("secrets are not for the model to read; a script may load them itself (python-dotenv "
+                  "reads .env inside the process), but their content never goes through a tool call")
+
+
 WRITABLE = writable_for(CODE_ROOT, DATA_ROOT, NOTES_ROOT)
 IMMUTABLE = immutable_for(DATA_ROOT, NOTES_ROOT)
 READ_BLOCKED = read_blocked_for(CLOUD_ROOT, DATA_ROOT, NOTES_ROOT)
+SECRETS = secrets_for("~")
 
 INSIDE_SCOPE = "pass"   # "pass": silent inside WRITABLE, Claude Code's own mode decides. "allow" would
                         # also skip Claude Code's prompt (and, in auto mode, its classifier) for file and
@@ -188,29 +232,6 @@ UNATTENDED_NOTE = (" Nobody is at the keyboard to answer a prompt (CLAUDE_CODE_S
                    "guard refuses instead of letting the job wait: write this down as a question for the "
                    "morning report, with your recommendation, and go on with what does not depend on it.")
 
-_EDGE_L = r"(?<![\w.\-/\\$:])"
-_EDGE_R = r"(?=\s|$|;)"
-REMOVE_VERBS = {"rm", "rmdir", "rd", "del", "erase", "remove-item", "ri", "mv", "move", "move-item", "mi",
-                "ren", "rename", "rename-item", "rni", "git rm", "git mv"}
-CREATE_VERBS = {"new-item", "ni", "mkdir", "md"}
-WRITE_VERBS = re.compile(
-    _EDGE_L + r"(rm|rmdir|rd|del|erase|Remove-Item|ri|mv|move|Move-Item|mi|ren|rename|Rename-Item|rni|"
-    r"git\s+rm|git\s+mv|Clear-Content|clc|Set-Content|sc|Add-Content|ac|Out-File|Tee-Object|tee|"
-    r"truncate|sed\s+-i\S*|perl\s+-pi\S*|touch|New-Item|ni|mkdir|md)" + _EDGE_R,
-    re.IGNORECASE,
-)
-COPY_VERBS = re.compile(_EDGE_L + r"(cp|copy|Copy-Item|cpi|xcopy|robocopy)" + _EDGE_R, re.IGNORECASE)
-READ_VERBS = re.compile(
-    _EDGE_L + r"(ls|dir|cat|type|find|Get-ChildItem|gci|Get-Content|gc|head|tail|less|more|grep|egrep|"
-    r"fgrep|rg|tree|Select-String|sls|wc|Invoke-Item|ii|Import-Csv|ipcsv)" + _EDGE_R,
-    re.IGNORECASE,
-)
-LISTS_CWD = {"ls", "dir", "get-childitem", "gci", "tree", "find", "rg"}   # without a path they read the cwd
-RECURSES = {"find", "rg", "tree"}                                         # recursive without a flag
-REDIRECT = re.compile(r"(?<![<>&\-\w])\d?>{1,2}\s*(\"[^\"]*\"|'[^']*'|[^\s;|&<>]+)")
-CD = re.compile(r"^\s*(?:cd|Set-Location|sl|pushd)\s+(\S.*?)\s*$", re.IGNORECASE)
-SINKS = {"/dev/null", "nul", "$null", "nul:", "/dev/stdout", "/dev/stderr"}
-WINDOWS_VERBS = {"robocopy", "xcopy", "copy", "move", "del", "erase", "rd", "rmdir", "md", "ren", "rename", "dir"}
 WHOLE_TREE = {".", "./", ".\\", "*", ":/", ":/*", ":(top)"}
 
 
@@ -268,7 +289,7 @@ def literal_prefix(pattern):
 
 def build_config(code=None, data=None, notes=None, writable=None, immutable=None, read_blocked=None,
                  grant_files=None, inside=None, outside=None, note_prefix=None, attended="env",
-                 unattended=None, pause_flag=None, continue_file=None):
+                 unattended=None, pause_flag=None, continue_file=None, secrets=None):
     """Collect the configuration into one dict; the self-test passes its own values."""
     cwd = os.getcwd()
     flag = expand(PAUSE_FLAG if pause_flag is None else pause_flag)
@@ -311,13 +332,39 @@ def build_config(code=None, data=None, notes=None, writable=None, immutable=None
             seen.add(norm(g, cwd))
             files.append(g)
     cfg["grant_files"] = files
-    cfg["granted"], cfg["read_exact"], cfg["read_tree"], cfg["grant_notes"] = load_grants(files, cwd)
+    (cfg["granted"], cfg["granted_files"], cfg["read_exact"], cfg["read_tree"],
+     cfg["grant_notes"]) = load_grants(files, cwd)
+    s = SECRETS if secrets is None else secrets
+    cfg["secret_names"] = [x.lower() for x in s.get("names", [])]
+    cfg["secret_except"] = {x.lower() for x in s.get("except", [])}
+    cfg["secret_dirs"] = [norm(e, cwd) for e in (expand(x) for x in s.get("folders", [])) if e]
+    cfg["secret_files"] = [norm(e, cwd) for e in (expand(x) for x in s.get("files", [])) if e]
     return cfg
 
 
+def grant_entry(raw, cwd):
+    """(path, is_folder) for one grant entry; None when it does not resolve.
+
+    A folder is an entry ending in / or \\ or /**, or one that exists as a folder, or a path that
+    does not exist yet and has no extension. Anything else is one file. A folder opens everything
+    below it; a file opens that file alone, for reading and for saving alike.
+    """
+    s = str(raw).strip()
+    folder = bool(re.search(r"([\\/]\*\*|[\\/])$", s))
+    s = re.sub(r"[\\/]\*\*$", "", s)
+    s = s.rstrip("\\/") or s
+    e = expand(s)
+    if not e:
+        return None
+    p = norm(e, cwd)
+    if not folder:
+        folder = os.path.isdir(p) or (not os.path.exists(p) and not os.path.splitext(p)[1])
+    return p, folder
+
+
 def load_grants(files, cwd):
-    """Folders and paths granted by approved plans. An expired or unreadable grant grants nothing."""
-    write, exact, tree, notes = [], [], [], []
+    """Folders and files granted by approved plans. An expired or unreadable grant grants nothing."""
+    write, write_files, exact, tree, notes = [], [], [], [], []
     for f in files:
         if not os.path.isfile(f):
             continue
@@ -340,23 +387,95 @@ def load_grants(files, cwd):
                 notes.append(f"{f}: expiry '{exp}' not a date, ignored")
                 continue
         for w in g.get("write", []) or []:
-            e = expand(str(w))
-            if e:
-                write.append(norm(e, cwd))
+            entry = grant_entry(w, cwd)
+            if entry:
+                (write if entry[1] else write_files).append(entry[0])
         for r in g.get("read", []) or []:
-            r = str(r)
-            whole = r.rstrip().endswith("**")
-            e = expand(re.sub(r"[\\/]\*\*\s*$", "", r) if whole else r)
-            if e:
-                (tree if whole else exact).append(norm(e, cwd))
-        notes.append(f"{f}: grants {len(g.get('write', []) or [])} folder(s) to write and "
+            entry = grant_entry(r, cwd)
+            if entry:
+                (tree if entry[1] else exact).append(entry[0])
+        notes.append(f"{f}: grants {len(g.get('write', []) or [])} path(s) to write and "
                      f"{len(g.get('read', []) or [])} path(s) to read" + (f" until {exp}" if exp else ""))
-    return write, exact, tree, notes
+    return write, write_files, exact, tree, notes
+
+
+def default_grant_file():
+    """Where --grant writes: the job folder's file in a background job, else the project's."""
+    job = os.environ.get("CLAUDE_JOB_DIR")
+    if job:
+        return os.path.join(job, "write-scope.json")
+    return os.path.join(os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd(), ".claude", "write-scope.local.json")
+
+
+def write_grant(path, kind, entries, hours=12.0, plan="", now=None):
+    """Add read or write entries to a grant file; returns the file's new content.
+
+    One expiry per file: the later of the one on file and now + hours. An expired or unreadable file
+    is started afresh, so an old grant never comes back to life. An existing folder is written with
+    a trailing / so the entry says what it opens.
+    """
+    now = now or datetime.now()
+    g = {}
+    if os.path.isfile(path):
+        try:
+            with open(path, encoding="utf-8-sig") as fh:
+                g = json.load(fh)
+            if not isinstance(g, dict) or datetime.fromisoformat(str(g.get("expires"))) < now:
+                g = {}
+        except (OSError, ValueError, TypeError):
+            g = {}
+    expires = now + timedelta(hours=hours)
+    if g.get("expires"):
+        expires = max(expires, datetime.fromisoformat(str(g["expires"])))
+    items = list(g.get(kind, []) or [])
+    for e in entries:
+        e = str(e).replace("\\", "/")
+        if os.path.isdir(expand(e) or "") and not e.endswith("/"):
+            e += "/"
+        if e not in items:
+            items.append(e)
+    g[kind] = items
+    g["expires"] = expires.isoformat(timespec="minutes")
+    g["approved"] = g.get("approved") or now.isoformat(timespec="minutes")
+    if plan:
+        g["plan"] = plan
+    g.setdefault("plan", "pointed to by the person in the session")
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(g, fh, indent=1)
+    return g
+
+
+def grant_cli(argv):
+    """--grant read|write PATH... [--hours N] [--plan TEXT] [--file F]: record what the person pointed to."""
+    args = argv[argv.index("--grant") + 1:]
+    if not args or args[0] not in ("read", "write"):
+        print("usage: --grant read|write PATH... [--hours 12] [--plan TEXT] [--file GRANT.json]")
+        return 2
+    kind, rest, opts = args[0], [], {"--hours": "12", "--plan": "", "--file": default_grant_file()}
+    i = 1
+    while i < len(args):
+        if args[i] in opts and i + 1 < len(args):
+            opts[args[i]] = args[i + 1]
+            i += 2
+        else:
+            rest.append(args[i])
+            i += 1
+    if not rest:
+        print("name at least one path")
+        return 2
+    g = write_grant(opts["--file"], kind, rest, float(opts["--hours"]), opts["--plan"])
+    print(f"{opts['--file']}: {kind} {', '.join(g[kind])} until {g['expires']}")
+    return 0
 
 
 # ------------------------------------------------------------------------------- the decision
 
-ALLOWED_OPS = {"never": set(), "deposit-only": {"create", "copy-out"}, "existing-only": {"modify"}}
+# A deposit is any new file or folder (a copy in, a download, a redirect or mkdir to a name not yet
+# there); a copy out of the archive is a read. That is how transcripts and mails get filed:
+# `T=...; mkdir -p "$T" && cp x "$T/"`, which the parser resolves.
+ALLOWED_OPS = {"never": set(), "deposit-only": {"create", "create-other", "copy-out"},
+               "existing-only": {"modify", "copy-out"}}
 
 
 def immutable_hit(p, cfg):
@@ -389,7 +508,7 @@ def immutable_refusal(p, op, cfg, detail=""):
 
 
 def scope(p, cfg):
-    if any(within(p, r) for r in cfg["writable"] + cfg["granted"]):
+    if any(within(p, r) for r in cfg["writable"] + cfg["granted"]) or p in cfg["granted_files"]:
         return cfg["inside"], ""
     return cfg["outside"], (
         f"`{p}` is outside the folders this setup writes to without asking. For a job that runs while "
@@ -397,8 +516,37 @@ def scope(p, cfg):
         f"starts (guide 04).")
 
 
-def read_refusal(p, cfg, recursive=False):
-    """The refusal text when reading p (or searching it recursively) is blocked; None otherwise."""
+CODE_EXTENSIONS = {".py", ".pyi", ".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx", ".r", ".rs", ".go", ".java",
+                   ".cs", ".ps1", ".psm1", ".sh", ".bash", ".html", ".css", ".c", ".h", ".cpp", ".rb", ".php", ".sql"}
+
+
+def secret_refusal(p, cfg):
+    """The refusal text when p is a secrets file or lies in a secrets folder; None otherwise.
+    Source code is no secret by its name: a credentials.py handles credentials and holds none."""
+    name = os.path.basename(p).lower()
+    if name in cfg["secret_except"]:
+        return None
+    if os.path.splitext(name)[1] in CODE_EXTENSIONS and not any(within(p, d) for d in cfg["secret_dirs"]):
+        return None
+    if (p in cfg["secret_files"] or any(within(p, d) for d in cfg["secret_dirs"])
+            or any(fnmatch.fnmatchcase(name, pat) for pat in cfg["secret_names"])):
+        return f"{SECRETS_REASON}. (`{p}`)"
+    return None
+
+
+def read_refusal(p, cfg, recursive=False, content=True):
+    """The refusal text when reading p (or searching it recursively) is blocked; None otherwise.
+
+    content=False for a call that only lists names (Glob): a secrets file's name may be seen.
+    """
+    secret = secret_refusal(p, cfg)
+    if secret and (content or any(within(p, d) for d in cfg["secret_dirs"])):
+        return secret
+    return blocked_refusal(p, cfg, recursive)
+
+
+def blocked_refusal(p, cfg, recursive=False):
+    """The read block alone (READ_BLOCKED), without the secrets rule."""
     for root, keep, why in cfg["read_blocked"]:
         if within(p, root):
             if any(within(p, k) for k in keep) or read_granted(p, cfg):
@@ -411,7 +559,7 @@ def read_refusal(p, cfg, recursive=False):
 
 
 def read_granted(p, cfg):
-    return (p in cfg["read_exact"] or any(within(p, t) for t in cfg["read_tree"])
+    return (p in cfg["read_exact"] or p in cfg["granted_files"] or any(within(p, t) for t in cfg["read_tree"])
             or any(within(p, g) for g in cfg["granted"]))
 
 
@@ -474,7 +622,7 @@ def decide_call(tool, ti, cwd, cfg):
     if tool in READ_TOOLS:
         return decide_read_tool(tool, ti, cwd, cfg)
     if tool in SHELL_TOOLS:
-        return decide_shell(ti.get("command", "") or "", cwd, cfg)
+        return decide_shell(ti.get("command", "") or "", cwd, cfg, "ps" if tool == "PowerShell" else "bash")
     prefix = cfg["note_prefix"]
     if prefix and tool.startswith(prefix):
         return decide_note(tool[len(prefix):], ti, cfg)
@@ -482,8 +630,6 @@ def decide_call(tool, ti, cwd, cfg):
 
 
 def decide_read_tool(tool, ti, cwd, cfg):
-    if not cfg["read_blocked"]:
-        return "pass", ""
     if tool == "Read":
         raw = ti.get("file_path") or ""
         refusal = read_refusal(norm(raw, cwd), cfg) if raw else None
@@ -492,8 +638,8 @@ def decide_read_tool(tool, ti, cwd, cfg):
         pattern = str(ti.get("pattern") or "")
         prefix = literal_prefix(pattern)
         target = norm(prefix, base) if prefix else base
-        refusal = read_refusal(target, cfg, recursive="**" in pattern)
-    else:  # Grep searches a folder recursively, or one file
+        refusal = read_refusal(target, cfg, recursive="**" in pattern, content=False)
+    else:  # Grep searches a folder recursively (hidden and gitignored files skipped), or one file
         refusal = read_refusal(norm(ti.get("path") or cwd, cwd), cfg, recursive=True)
     return ("deny", refusal) if refusal else ("pass", "")
 
@@ -519,7 +665,1078 @@ def decide_note(action, ti, cfg):
     return ("allow", "") if cfg["inside"] == "allow" else ("pass", "")
 
 
-# ------------------------------------------------------------------------------- the shell
+# ------------------------------------------------------------------------------- the shell, parsed
+#
+# A command is read the way its shell reads it: quotes, escapes, $( ), backticks, heredocs and
+# here-strings, PowerShell script blocks and subexpressions, redirections. Each simple command is
+# classified by its verb, and only that verb's path arguments and the redirect targets count as
+# paths, so a quoted message, a sed script, a grep pattern or a line of a heredoc is never taken
+# for one (the faults of the pattern match it replaces, November 2026). Levels:
+#
+#   top    the command itself, with its $( ), backtick and subshell parts: every rule applies
+#   body   the code of `pwsh -Command`, `bash -c`, and a heredoc fed to a shell: reads, the immutable
+#          folders and git apply, the write scope does not (it is never inspected there)
+#   data   a heredoc or here-string fed to anything else is not parsed. The immutable folders still
+#          match by substring over the whole text (legacy_immutable below), and code fed to an
+#          interpreter (python -c, a heredoc to python or node) is searched for paths into the read
+#          block.
+#
+# A word counts as a path only when it expands fully (~, $VAR, ${VAR}, $env:VAR, %VAR% from the
+# environment or an assignment earlier in the same command) and resolves under a drive that exists,
+# with no colon or quote left in it; for the write scope it must also exist or be creatable (its
+# folder exists). A word the guard cannot expand is no path: the substring backstop is the net there.
+
+LIT = "\x01"    # a $ that was quoted literally ('...', \$): never expanded
+SUBST = "\x02"  # the place of a $( ), backtick or script block: its value is unknown
+
+
+class Simple:
+    """One simple command: its words (quotes removed), redirections and heredoc bodies."""
+    __slots__ = ("words", "redirects", "heredocs", "level", "shell")
+
+    def __init__(self, level, shell):
+        self.words, self.redirects, self.heredocs = [], [], []
+        self.level, self.shell = level, shell
+
+
+class _Lexer:
+    def __init__(self, src, level, out):
+        self.s, self.i, self.level, self.out, self.pending = src, 0, level, out, []
+
+    def at(self, k=0):
+        j = self.i + k
+        return self.s[j] if 0 <= j < len(self.s) else ""
+
+    def skip_line(self):
+        while self.i < len(self.s) and self.s[self.i] != "\n":
+            self.i += 1
+
+
+class BashLexer(_Lexer):
+    STOP = set(" \t\r\n;&|()<>")
+
+    def parse_list(self, closer=""):
+        cur = None
+        while self.i < len(self.s):
+            c = self.s[self.i]
+            if closer and c == closer:
+                self.i += 1
+                return
+            if c in " \t\r":
+                self.i += 1
+            elif c == "\\" and self.at(1) == "\n":
+                self.i += 2
+            elif c == "\n":
+                self.i += 1
+                self.heredoc_bodies()
+                cur = None
+            elif c == "#" and (self.i == 0 or self.s[self.i - 1] in " \t\n;&|("):
+                self.skip_line()
+            elif c == "&" and self.at(1) == ">":
+                cur = cur or self.new()
+                self.redirect(cur)
+            elif c in ";&|":
+                while self.at() in (";", "&", "|"):
+                    self.i += 1
+                cur = None
+            elif c == "(":
+                if self.at(1) == "(":
+                    self.skip_arith(2)
+                else:
+                    self.i += 1
+                    self.parse_list(")")
+                cur = None
+            elif c == ")":
+                self.i += 1
+            elif c in "<>" or (c.isdigit() and re.match(r"\d+[<>]", self.s[self.i:])
+                                and (cur is None or self.s[self.i - 1] in " \t")):
+                cur = cur or self.new()
+                self.redirect(cur)
+            else:
+                cur = cur or self.new()
+                cur.words.append(self.word())
+
+    def new(self):
+        cur = Simple(self.level, "bash")
+        self.out.append(cur)
+        return cur
+
+    def redirect(self, cur):
+        m = re.match(r"\d*(&>>|&>|<<<|<<-|<<|>>|>&|<&|>\||<>|<\(|>\(|<|>)", self.s[self.i:])
+        op = m.group(1)
+        self.i += m.end()
+        if op in ("<(", ">("):
+            self.parse_list(")")
+            return
+        while self.at() in (" ", "\t"):
+            self.i += 1
+        w = self.word()
+        if op in ("<<", "<<-"):
+            self.pending.append((w.replace(LIT, "$"), op == "<<-", cur))
+        elif op == "<<<" or (op in (">&", "<&") and re.fullmatch(r"\d*-?", w)):
+            pass  # a here-string is data; >&2 duplicates a descriptor
+        else:
+            cur.redirects.append((op, w))
+
+    def heredoc_bodies(self):
+        for delim, strip_tabs, cur in self.pending:
+            lines = []
+            while self.i < len(self.s):
+                j = self.s.find("\n", self.i)
+                line = self.s[self.i:j if j >= 0 else len(self.s)]
+                self.i = j + 1 if j >= 0 else len(self.s)
+                if (line.lstrip("\t") if strip_tabs else line).rstrip("\r") == delim:
+                    break
+                lines.append(line)
+            cur.heredocs.append("\n".join(lines))
+        self.pending = []
+
+    def skip_arith(self, start):
+        self.i += start
+        depth = 1
+        while self.i < len(self.s) and depth:
+            if self.s.startswith("((", self.i):
+                depth, self.i = depth + 1, self.i + 2
+            elif self.s.startswith("))", self.i):
+                depth, self.i = depth - 1, self.i + 2
+            else:
+                self.i += 1
+
+    def backtick(self):
+        j = self.i
+        while j < len(self.s) and self.s[j] != "`":
+            j += 2 if self.s[j] == "\\" else 1
+        BashLexer(self.s[self.i:j], self.level, self.out).parse_list()
+        self.i = j + 1
+
+    def word(self):
+        buf = []
+        while self.i < len(self.s):
+            c = self.s[self.i]
+            if c in self.STOP:
+                break
+            if c == "\\":
+                if self.at(1) != "\n":
+                    buf.append(LIT if self.at(1) == "$" else self.at(1))
+                self.i += 2
+            elif c == "'":
+                j = self.s.find("'", self.i + 1)
+                j = len(self.s) if j < 0 else j
+                buf.append(self.s[self.i + 1:j].replace("$", LIT))
+                self.i = j + 1
+            elif c == "$" and self.at(1) == "'":
+                j = self.i + 2
+                while j < len(self.s) and self.s[j] != "'":
+                    j += 2 if self.s[j] == "\\" else 1
+                buf.append(self.s[self.i + 2:j].replace("$", LIT))
+                self.i = j + 1
+            elif c == '"':
+                self.i += 1
+                buf.append(self.dquoted())
+            else:
+                buf.append(self.dollar_or_char(c))
+        return "".join(buf)
+
+    def dollar_or_char(self, c):
+        if c == "$" and self.at(1) == "(":
+            if self.at(2) == "(":
+                self.skip_arith(3)
+            else:
+                self.i += 2
+                self.parse_list(")")
+            return SUBST
+        if c == "`":
+            self.i += 1
+            self.backtick()
+            return SUBST
+        if c == "$" and self.at(1) == "{":
+            j = self.s.find("}", self.i)
+            j = len(self.s) - 1 if j < 0 else j
+            text, self.i = self.s[self.i:j + 1], j + 1
+            return text
+        self.i += 1
+        return c
+
+    def dquoted(self):
+        buf = []
+        while self.i < len(self.s):
+            c = self.s[self.i]
+            if c == '"':
+                self.i += 1
+                break
+            if c == "\\" and self.at(1) in '"\\$`\n':
+                if self.at(1) != "\n":
+                    buf.append(LIT if self.at(1) == "$" else self.at(1))
+                self.i += 2
+            else:
+                buf.append(self.dollar_or_char(c))
+        return "".join(buf)
+
+
+class PsLexer(_Lexer):
+    STOP = set(" \t\r\n;|,(){}<>")
+
+    def parse_list(self, closer=""):
+        cur = None
+        while self.i < len(self.s):
+            c = self.s[self.i]
+            if closer and c == closer:
+                self.i += 1
+                return
+            if c in " \t\r,":
+                self.i += 1
+            elif c == "`" and self.at(1) in ("\n", "\r"):
+                self.i += 2
+            elif c in "\n;":
+                self.i += 1
+                cur = None
+            elif c == "|" or (c == "&" and self.at(1) == "&"):
+                self.i += 2 if self.at(1) in ("|", "&") else 1
+                cur = None
+            elif self.s.startswith("<#", self.i):
+                j = self.s.find("#>", self.i)
+                self.i = len(self.s) if j < 0 else j + 2
+            elif c == "#":
+                self.skip_line()
+            elif c in "({":
+                self.i += 1
+                self.parse_list(")" if c == "(" else "}")
+                if cur is not None:
+                    cur.words.append(SUBST)
+            elif c in ")}":
+                self.i += 1
+            elif c in "<>" or (c in "0123456789*" and self.at(1) == ">"):
+                cur = cur or self.new()
+                m = re.match(r"[\d*]?(>>|>)(&\d)?", self.s[self.i:])
+                if not m:
+                    self.i += 1
+                    continue
+                self.i += m.end()
+                if not m.group(2):
+                    while self.at() in (" ", "\t"):
+                        self.i += 1
+                    cur.redirects.append((m.group(1), self.word()))
+            else:
+                cur = cur or self.new()
+                cur.words.append(self.word())
+
+    def new(self):
+        cur = Simple(self.level, "ps")
+        self.out.append(cur)
+        return cur
+
+    def here_string(self, quote):
+        end = "\n" + quote + "@"
+        j = self.s.find(end, self.i)
+        self.i = len(self.s) if j < 0 else j + len(end)
+        return SUBST  # a here-string is a value, never a path
+
+    def word(self):
+        buf = []
+        while self.i < len(self.s):
+            c = self.s[self.i]
+            if c == "@" and self.at(1) in ("'", '"') and re.match(r"@['\"][ \t]*\r?\n", self.s[self.i:]):
+                q = self.at(1)
+                self.i += 2
+                buf.append(self.here_string(q))
+            elif c in "$@" and self.at(1) in ("(", "{") and not (c == "$" and self.at(1) == "{"):
+                self.i += 2
+                self.parse_list(")" if self.s[self.i - 1] == "(" else "}")
+                buf.append(SUBST)
+            elif c == "$" and self.at(1) == "{":
+                j = self.s.find("}", self.i)
+                j = len(self.s) - 1 if j < 0 else j
+                buf.append(self.s[self.i:j + 1])
+                self.i = j + 1
+            elif c in self.STOP:
+                break
+            elif c == "`":
+                buf.append(LIT if self.at(1) == "$" else self.at(1))
+                self.i += 2
+            elif c == "'":
+                self.i += 1
+                part = []
+                while self.i < len(self.s):
+                    if self.s[self.i] == "'" and self.at(1) == "'":
+                        part.append("'")
+                        self.i += 2
+                    elif self.s[self.i] == "'":
+                        self.i += 1
+                        break
+                    else:
+                        part.append(self.s[self.i])
+                        self.i += 1
+                buf.append("".join(part).replace("$", LIT))
+            elif c == '"':
+                self.i += 1
+                buf.append(self.dquoted())
+            else:
+                buf.append(c)
+                self.i += 1
+        return "".join(buf)
+
+    def dquoted(self):
+        buf = []
+        while self.i < len(self.s):
+            c = self.s[self.i]
+            if c == '"' and self.at(1) == '"':
+                buf.append('"')
+                self.i += 2
+            elif c == '"':
+                self.i += 1
+                break
+            elif c == "`":
+                buf.append(LIT if self.at(1) == "$" else self.at(1))
+                self.i += 2
+            elif c == "$" and self.at(1) == "(":
+                self.i += 2
+                self.parse_list(")")
+                buf.append(SUBST)
+            else:
+                buf.append(c)
+                self.i += 1
+        return "".join(buf)
+
+
+def parse(src, shell, level):
+    """The simple commands of src, in the order they appear (nested ones included)."""
+    out = []
+    lexer = (PsLexer if shell == "ps" else BashLexer)(src, level, out)
+    try:
+        lexer.parse_list()
+        if shell != "ps":
+            lexer.heredoc_bodies()
+    except (IndexError, AttributeError, RecursionError):
+        pass  # a construct the lexer does not follow: what was read stands, the backstop covers the rest
+    return out
+
+
+# ------------------------------------------------------------------------------- words to paths
+
+_VAR = re.compile(r"\$\{env:(\w+)\}|\$env:(\w+)|\$\{(\w+)\}|\$(\w+)|%(\w+)%", re.IGNORECASE)
+_UNSET = object()
+UNKNOWN = "\x03"  # the place of a part the guard cannot know, inside an Unknown word
+
+
+class Unknown(str):
+    """A word with a part the guard cannot know (a loop variable, $(date), $1), marked by UNKNOWN.
+    It is no path; its known folder (the part before the unknown one) may be."""
+
+
+def expand_word(w, state):
+    """The word with ~ and its variables expanded; an Unknown when a part cannot be known."""
+    if w is None:
+        return None
+    unknown = [SUBST in w]
+    w = w.replace(SUBST, UNKNOWN)
+    vars_, ps = state["vars"], state["shell"] == "ps"
+
+    def rep(m):
+        env_name, name = m.group(1) or m.group(2) or m.group(5), m.group(3) or m.group(4)
+        if env_name:
+            val = os.environ.get(env_name)
+        else:
+            key = name.lower() if ps else name
+            val = vars_.get(key, _UNSET)
+            if val is _UNSET:
+                if name.upper() in ("HOME", "USERPROFILE") and not os.environ.get(name):
+                    val = os.path.expanduser("~")
+                elif name.upper() == "PWD":
+                    val = state["cwd"]
+                else:
+                    val = os.environ.get(name)
+        if val is None or isinstance(val, Unknown):
+            unknown[0] = True
+        return UNKNOWN if val is None else val
+
+    out = _VAR.sub(rep, w)
+    if "$" in out:  # $1, $?, $@ and the like
+        out, unknown[0] = re.sub(r"\$[^\w]?\w*", UNKNOWN, out), True
+    out = out.replace(LIT, "$")
+    if out == "~" or out.startswith(("~/", "~\\")):
+        out = os.path.expanduser("~") + out[1:]
+    return Unknown(out) if unknown[0] or UNKNOWN in out else out
+
+
+def shown(w):
+    """A word as the agent should see it in a reason: an unknown part as $?."""
+    return (w or "").replace(UNKNOWN, "$?")
+
+
+def known_folder(t, state):
+    """For an Unknown word, the folder written before its unknown part (/c/tmp/out/all-$site.log
+    gives /c/tmp/out); None when nothing before it names a folder."""
+    if not isinstance(t, Unknown):
+        return None
+    head = t[:t.find(UNKNOWN)]
+    cut = max(head.rfind("/"), head.rfind("\\"))
+    if cut < 0:
+        return None
+    return to_path(head[:cut + 1] if cut == 0 or head[cut - 1:cut] == ":" else head[:cut], state)
+
+
+_GIT_ROOT = []
+
+
+def git_root():
+    """The folder Git Bash calls /, for a path such as /usr/bin."""
+    if not _GIT_ROOT:
+        g = shutil.which("git")
+        _GIT_ROOT.append(os.path.dirname(os.path.dirname(g)) if g else "C:/Program Files/Git")
+    return _GIT_ROOT[0]
+
+
+def to_path(t, state):
+    """An absolute, case-normalised path for an expanded word; None when it is not a path."""
+    cwd = state["cwd"]
+    if t is None or isinstance(t, Unknown) or UNKNOWN in t:
+        return None
+    t = t.strip()
+    if not t or t.lower() in SINKS or t in ("-", "--"):
+        return None
+    if re.match(r"^[A-Za-z][\w+.\-]*://", t) or re.match(r"^[A-Za-z]{2,}:", t):
+        return None  # a URL, or a PowerShell drive such as Env: or HKCU:
+    if os.name == "nt":
+        m = re.match(r"^/([a-zA-Z])(/.*|$)", t)
+        if m:
+            t = m.group(1) + ":" + (m.group(2) or "/")
+        elif t == "/tmp" or t.startswith("/tmp/"):
+            t = tempfile.gettempdir() + t[4:]
+        elif t.startswith(("/dev/", "/proc/")):
+            return None
+        elif t.startswith("/") and not t.startswith("//"):
+            t = (git_root() if state["shell"] != "ps" else os.path.splitdrive(cwd or "C:")[0]) + t
+    elif t.startswith(("/dev/", "/proc/")):
+        return None
+    rest = t[2:] if re.match(r"^[A-Za-z]:", t) else t
+    if os.name == "nt" and (":" in rest or any(ch in rest for ch in '<>"|\x00')):
+        return None
+    if any(ch in t for ch in "*?"):
+        t = literal_prefix(t.replace("\\", "/")) or "."
+    if not os.path.isabs(t) and not re.match(r"^[A-Za-z]:", t):
+        if not cwd:
+            return None
+        t = os.path.join(cwd, t)
+    p = os.path.normcase(os.path.normpath(t))
+    if os.name == "nt":
+        drive = os.path.splitdrive(p)[0]
+        if not drive or not os.path.exists(drive + os.sep):
+            return None
+    return p
+
+
+def creatable(p, ancestors=False):
+    """The path exists, or a single create makes it (its folder exists); any existing ancestor will do
+    for mkdir -p and New-Item, which create the folders between."""
+    if os.path.exists(p) or os.path.isdir(os.path.dirname(p)):
+        return True
+    if ancestors:
+        d = os.path.dirname(p)
+        while d and d != os.path.dirname(d):
+            if os.path.isdir(d):
+                return True
+            d = os.path.dirname(d)
+    return False
+
+
+# ------------------------------------------------------------------------------- verbs
+
+SHELL_KEYWORDS = {"if", "then", "else", "elif", "fi", "do", "done", "while", "until", "for", "in", "case",
+                  "esac", "function", "select", "!", "{", "}", "time"}
+PS_KEYWORDS = {"if", "elseif", "else", "foreach", "for", "while", "do", "until", "switch", "try", "catch",
+               "finally", "function", "filter", "param", "return", "throw", "trap", "begin", "process",
+               "end", "break", "continue", "exit", "class", "using"}
+WRAPPERS = {"sudo": (), "command": (), "builtin": (), "exec": (), "nohup": (), "winpty": (),
+            "nice": ("-n",), "timeout": ("-s", "-k", "--signal", "--kill-after"), "stdbuf": ("-i", "-o", "-e")}
+INTERPRETERS = {"python": ("-c",), "python3": ("-c",), "py": ("-c",), "pythonw": ("-c",), "uv": (),
+                "node": ("-e", "--eval", "-p", "--print"), "deno": ("eval",), "rscript": ("-e",), "r": ("-e",),
+                "ruby": ("-e",), "php": ("-r",)}
+SHELLS = {"bash", "sh", "zsh", "dash", "ksh"}
+POWERSHELLS = {"pwsh", "powershell"}
+
+READERS = {  # verb: options that take a value
+    "cat": (), "tac": (), "nl": (), "head": ("-n", "-c", "--lines", "--bytes"),
+    "tail": ("-n", "-c", "--lines", "--bytes", "--pid", "-s"), "less": (), "more": (), "wc": (),
+    "ls": ("-I", "--ignore", "-w", "--width", "--hide", "-T"), "dir": (), "vdir": (), "tree": ("-L", "-P", "-I"),
+    "stat": ("-c", "--format"), "file": (), "du": ("-d", "--max-depth"), "sort": ("-k", "-t", "-S", "-T", "--key"),
+    "uniq": ("-f", "-s", "-w"), "cut": ("-d", "-f", "-c", "-b"), "diff": ("-x", "-X", "-U", "-C"), "cmp": (),
+    "comm": (), "paste": ("-d",), "column": ("-s", "-t"), "xxd": ("-l", "-s", "-c"), "od": ("-A", "-t", "-N", "-j"),
+    "strings": ("-n",), "base64": (), "md5sum": (), "sha1sum": (), "sha256sum": (), "iconv": ("-f", "-t"),
+    "jq": (), "yq": (),
+}
+ALWAYS_RECURSIVE = {"tree", "du", "rg", "ag", "ack", "find"}
+LISTERS = {"ls", "dir", "vdir", "tree", "stat", "du", "file"}  # names and sizes, no content
+ARGS_NOT_PATHS = {"echo", "printf", "gh", "git", "write-host", "write-output", "write-error", "test", "[", "[[",
+                  "cd", "pushd", "chdir", "set-location", "sl", "push-location"}  # cd has its own rule
+LISTS_CWD_VERBS = {"ls", "dir", "vdir", "tree", "du", "rg", "ag", "ack"}
+GREPS = {"grep": ("-e", "-f", "-A", "-B", "-C", "-m", "-d", "-D", "--include", "--exclude", "--exclude-dir",
+                  "--max-count", "--context", "--after-context", "--before-context", "--regexp", "--file",
+                  "--label", "--color", "--colour", "--binary-files", "--devices", "--directories"),
+         "rg": ("-e", "-f", "-A", "-B", "-C", "-m", "-g", "--glob", "-t", "--type", "-T", "--type-not", "-M",
+                "--max-columns", "-j", "--threads", "--max-count", "--context", "--regexp", "--file", "-E",
+                "--encoding", "--iglob", "--max-depth", "-d", "--sort", "--sortr", "--type-add", "-r", "--replace",
+                "--color", "--colors", "--max-filesize", "--engine", "--pre", "--path-separator"),
+         "ag": ("-G", "--file-search-regex", "-A", "-B", "-C", "-m", "--depth", "--ignore"),
+         "ack": ("--type", "-A", "-B", "-C", "-m")}
+GREPS["egrep"] = GREPS["fgrep"] = GREPS["grep"]
+REMOVERS = {"rm": (), "unlink": (), "shred": ("-n", "-s"), "rmdir": ()}
+MOVERS = {"mv": ("-t", "--target-directory", "-S", "--suffix"), "cp": ("-t", "--target-directory", "-S", "--suffix"),
+          "ln": ("-t", "--target-directory", "-S", "--suffix"),
+          "rsync": ("-e", "--rsh", "--exclude", "--include", "--filter", "-f", "--exclude-from", "--include-from",
+                    "--files-from", "--log-file", "--password-file", "--chmod", "--chown", "-T", "--temp-dir",
+                    "--backup-dir", "--compare-dest", "--copy-dest", "--link-dest", "--partial-dir")}
+MAKERS = {"mkdir": ("-m", "--mode"), "touch": ("-d", "-t", "-r", "--date", "--reference"), "tee": (),
+          "truncate": ("-s", "--size", "-r", "--reference")}
+
+PS_ALIASES = {
+    "rm": "remove-item", "del": "remove-item", "erase": "remove-item", "rd": "remove-item", "ri": "remove-item",
+    "rmdir": "remove-item", "mv": "move-item", "move": "move-item", "mi": "move-item", "cp": "copy-item",
+    "copy": "copy-item", "cpi": "copy-item", "ren": "rename-item", "rni": "rename-item", "ni": "new-item",
+    "mkdir": "new-item", "md": "new-item", "sc": "set-content", "ac": "add-content", "clc": "clear-content",
+    "cat": "get-content", "gc": "get-content", "type": "get-content", "ls": "get-childitem",
+    "dir": "get-childitem", "gci": "get-childitem", "sls": "select-string", "ipcsv": "import-csv",
+    "ii": "invoke-item", "gi": "get-item", "cd": "set-location", "sl": "set-location", "chdir": "set-location",
+    "pushd": "push-location", "tee": "tee-object", "iwr": "invoke-webrequest", "irm": "invoke-restmethod",
+    "epcsv": "export-csv",
+}
+# verb: (roles of the positional arguments, {parameter: role}, parameters that take a non-path value).
+# Roles: read, remove, dest, write, create, newname, cd, value. The last positional role repeats.
+PS_VERBS = {
+    "remove-item": (["remove"], {"path": "remove", "literalpath": "remove"}, ("filter", "include", "exclude", "stream", "credential")),
+    "move-item": (["remove", "dest"], {"path": "remove", "literalpath": "remove", "destination": "dest"}, ("filter", "include", "exclude", "credential")),
+    "copy-item": (["read", "dest"], {"path": "read", "literalpath": "read", "destination": "dest"}, ("filter", "include", "exclude", "credential", "fromsession", "tosession")),
+    "rename-item": (["remove", "newname"], {"path": "remove", "literalpath": "remove", "newname": "newname"}, ("credential",)),
+    "new-item": (["create"], {"path": "create"}, ("itemtype", "type", "value", "target", "name", "credential")),
+    "set-content": (["write", "value"], {"path": "write", "literalpath": "write"}, ("value", "encoding", "stream", "delimiter", "filter", "include", "exclude")),
+    "add-content": (["write", "value"], {"path": "write", "literalpath": "write"}, ("value", "encoding", "stream", "delimiter", "filter", "include", "exclude")),
+    "clear-content": (["write"], {"path": "write", "literalpath": "write"}, ("stream", "filter", "include", "exclude")),
+    "out-file": (["write"], {"filepath": "write", "literalpath": "write", "path": "write"}, ("encoding", "width", "inputobject")),
+    "tee-object": (["write"], {"filepath": "write", "literalpath": "write", "path": "write"}, ("variable", "inputobject", "encoding")),
+    "export-csv": (["write"], {"path": "write", "literalpath": "write"}, ("delimiter", "encoding", "inputobject", "quotefields", "usequotes")),
+    "export-clixml": (["write"], {"path": "write", "literalpath": "write"}, ("depth", "encoding", "inputobject")),
+    "invoke-webrequest": (["value"], {"outfile": "write", "infile": "read"}, ("uri", "method", "body", "headers", "contenttype", "useragent", "timeoutsec", "headers", "credential", "websession", "sessionvariable", "maximumredirection")),
+    "invoke-restmethod": (["value"], {"outfile": "write", "infile": "read"}, ("uri", "method", "body", "headers", "contenttype", "useragent", "timeoutsec", "credential", "websession", "sessionvariable")),
+    "expand-archive": (["read", "dest"], {"path": "read", "literalpath": "read", "destinationpath": "dest"}, ()),
+    "compress-archive": (["read", "dest"], {"path": "read", "literalpath": "read", "destinationpath": "dest"}, ("compressionlevel",)),
+    "get-content": (["read"], {"path": "read", "literalpath": "read"}, ("totalcount", "head", "tail", "first", "last", "readcount", "encoding", "delimiter", "stream", "filter", "include", "exclude")),
+    "get-childitem": (["read", "value"], {"path": "read", "literalpath": "read"}, ("filter", "include", "exclude", "depth", "attributes")),
+    "select-string": (["value", "read"], {"path": "read", "literalpath": "read"}, ("pattern", "context", "encoding", "include", "exclude", "inputobject", "culture")),
+    "get-item": (["read"], {"path": "read", "literalpath": "read"}, ("filter", "include", "exclude", "stream")),
+    "invoke-item": (["read"], {"path": "read", "literalpath": "read"}, ("filter", "include", "exclude")),
+    "get-filehash": (["read"], {"path": "read", "literalpath": "read"}, ("algorithm", "inputstream")),
+    "format-hex": (["read"], {"path": "read", "literalpath": "read"}, ("encoding", "count", "offset")),
+    "import-csv": (["read"], {"path": "read", "literalpath": "read"}, ("delimiter", "encoding", "header")),
+    "import-clixml": (["read"], {"path": "read", "literalpath": "read"}, ()),
+    "set-location": (["cd"], {"path": "cd", "literalpath": "cd"}, ("stackname",)),
+    "push-location": (["cd"], {"path": "cd", "literalpath": "cd"}, ("stackname",)),
+}
+PS_SWITCHES = {"recurse", "force", "whatif", "confirm", "passthru", "nonewline", "append", "noclobber", "verbose",
+               "debug", "file", "directory", "hidden", "readonly", "system", "raw", "asbytestream", "wait",
+               "notypeinformation", "container", "casesensitive", "simplematch", "list", "quiet", "notmatch",
+               "allmatches", "usebasicparsing", "followsymlink", "leaf", "parent", "resolve", "noprofile",
+               "nologo", "noninteractive", "name", "allowclobber", "skipheadervalidation", "includetotalcount"}
+PS_COMMON_VALUES = ("erroraction", "warningaction", "informationaction", "progressaction", "errorvariable",
+                    "warningvariable", "informationvariable", "outvariable", "outbuffer", "pipelinevariable")
+PS_REMOVE_FIND = {"rm", "rmdir", "unlink", "shred", "mv", "remove-item", "del"}
+
+
+def verb_name(word):
+    """The command's name as a lowercase basename without .exe."""
+    if not word:
+        return ""
+    b = re.split(r"[\\/]", word.replace(LIT, "$"))[-1].lower()
+    return b[:-4] if b.endswith(".exe") else b
+
+
+def gnu_args(args, with_value=()):
+    """(positionals, {option: [values]}) for a GNU-style command line; -- ends the options."""
+    pos, opts, i, ended = [], {}, 0, False
+    while i < len(args):
+        a = args[i] or ""
+        if ended or not a.startswith("-") or a == "-":
+            pos.append(args[i])
+        elif a == "--":
+            ended = True
+        elif a.startswith("--") and "=" in a:
+            k, v = a.split("=", 1)
+            opts.setdefault(k, []).append(v)
+        elif a in with_value and i + 1 < len(args):
+            opts.setdefault(a, []).append(args[i + 1])
+            i += 1
+        else:
+            opts.setdefault(a, []).append(None)
+        i += 1
+    return pos, opts
+
+
+def short_flags(opts):
+    return set("".join(k[1:] for k in opts if re.fullmatch(r"-[A-Za-z]+", k)))
+
+
+def ps_args(args, verb):
+    """(positionals, {role: [words]}) for a PowerShell cmdlet call."""
+    roles, params, values = PS_VERBS[verb]
+    values = tuple(values) + PS_COMMON_VALUES
+    known = list(params) + list(values) + sorted(PS_SWITCHES)
+    pos, by_role, switches, i = [], {}, set(), 0
+    while i < len(args):
+        a = args[i] or ""
+        m = re.fullmatch(r"-([A-Za-z][\w-]*)(:(.*))?", a)
+        if not m:
+            pos.append(args[i])
+            i += 1
+            continue
+        name = m.group(1).lower()
+        full = name if name in known else next((k for k in known if k.startswith(name)), name)
+        value = m.group(3) if m.group(2) else None
+        takes = full in params or (full in values and not (verb == "get-childitem" and full == "name"))
+        if takes and value is None and i + 1 < len(args):
+            value, i = args[i + 1], i + 1
+        if full in params and value is not None:
+            by_role.setdefault(params[full], []).append(value)
+        elif takes:
+            by_role.setdefault("value:" + full, []).append(value)
+        else:
+            switches.add(full)
+        i += 1
+    for n, w in enumerate(pos):
+        role = roles[min(n, len(roles) - 1)]
+        by_role.setdefault(role, []).append(w)
+    return by_role, switches
+
+
+def strip_prefix(words, shell, state):
+    """The index of the verb: assignments, wrappers and keywords before it skipped; None for none."""
+    i = 0
+    while i < len(words):
+        w = words[i]
+        low = (w or "").lower()
+        if shell == "bash" and re.fullmatch(r"[A-Za-z_]\w*=.*", w or "", re.S):
+            i += 1
+        elif shell == "bash" and low in SHELL_KEYWORDS:
+            if low in ("for", "select", "case"):
+                if low in ("for", "select") and i + 1 < len(words):
+                    state["vars"][words[i + 1]] = None
+                return None
+            i += 1
+        elif shell == "ps" and low in PS_KEYWORDS:
+            return None
+        elif low in ("&", "."):
+            i += 1
+        elif low == "env" and shell == "bash":
+            i += 1
+            while i < len(words) and ((words[i] or "").startswith("-") or "=" in (words[i] or "")):
+                i += 2 if words[i] in ("-u", "-C", "--unset", "--chdir") else 1
+        elif low in WRAPPERS and shell == "bash":
+            i += 1
+            while i < len(words) and (words[i] or "").startswith("-"):
+                i += 2 if words[i] in WRAPPERS[low] else 1
+            if low == "timeout" and i < len(words):
+                i += 1
+        elif low == "xargs":
+            i += 1
+            while i < len(words) and (words[i] or "").startswith("-"):
+                i += 2 if words[i] in ("-I", "-n", "-P", "-d", "-E", "-L", "-s", "-a") else 1
+        else:
+            return i
+    return None
+
+
+def record_assignment(simple, state):
+    """NAME=value (bash) or $name = value (PowerShell) on its own: remember the value for later words."""
+    w = simple.words
+    if simple.shell == "bash":
+        start = 1 if w and w[0] in ("export", "local", "declare", "readonly", "typeset") else 0
+        if w[start:] and all(re.fullmatch(r"[A-Za-z_]\w*=.*", x or "", re.S) for x in w[start:]):
+            for x in w[start:]:
+                k, v = x.split("=", 1)
+                state["vars"][k] = expand_word(v, state)
+            return True
+        if w and w[0] == "read":
+            for x in w[1:]:
+                if re.fullmatch(r"[A-Za-z_]\w*", x or ""):
+                    state["vars"][x] = None
+        return False
+    m = re.fullmatch(r"\$(env:)?(\w+)", w[0] or "", re.I) if w else None
+    if m and len(w) >= 2 and w[1] in ("=", "+="):
+        val = expand_word(w[2], state) if len(w) == 3 and w[1] == "=" else None
+        if m.group(1):
+            pass  # $env:X = ... changes the process environment; the guard keeps reading its own
+        else:
+            state["vars"][m.group(2).lower()] = val
+        return True
+    return False
+
+
+def effects(simple, state):
+    """What one simple command does, as (kind, ...) tuples:
+    ("read", path, recursive) ("write", path, op, ancestors) ("git", cwd, sub, args, patterns)
+    ("cd", path) ("body", shell, text) ("code", text)."""
+    out = []
+    shell = simple.shell
+    P = lambda w: to_path(w, state)  # noqa: E731
+
+    def reads(ws, rec=False, content=True):
+        for w in ws:
+            p = P(w)
+            if p:
+                out.append(("read", p, rec, content, False))
+            elif known_folder(w, state):
+                out.append(("read", known_folder(w, state), rec, False, True))
+
+    def writes(ws, op=None, anc=False):
+        """op None: create when the path is not there, modify when it is (a redirect, tee, Set-Content)."""
+        for w in ws:
+            p = P(w)
+            if p:
+                o = op or ("modify" if os.path.exists(p) else "create-other")
+                out.append(("write", p, o, anc, False))
+            elif known_folder(w, state):  # an unknown name in a known folder
+                out.append(("write", known_folder(w, state), op, anc, True))
+
+    def dests(ws):
+        for w in ws:
+            p = P(w)
+            if p:
+                out.append(("write", p, "create" if os.path.isdir(p) or not os.path.exists(p) else "modify", False, False))
+            elif known_folder(w, state):
+                out.append(("write", known_folder(w, state), None, False, True))
+
+    for op, w in simple.redirects:
+        w = expand_word(w, state)
+        if op == "<":
+            reads([w])
+        else:
+            writes([w])
+    if record_assignment(simple, state):
+        return out
+    i = strip_prefix(simple.words, shell, state)
+    if i is None:
+        return out
+    raw = simple.words[i:]
+    verb = verb_name(raw[0])
+    words = [expand_word(w, state) for w in raw]
+    args = words[1:]
+    if verb not in ARGS_NOT_PATHS:  # any argument that names a place in a blocked folder (pdftotext x.pdf)
+        out.extend(("blocked-arg", p) for p in map(P, (a for a in args if not (a or "-").startswith("-"))) if p)
+
+    if shell == "ps" and PS_ALIASES.get(verb, verb) in PS_VERBS:
+        cmdlet = PS_ALIASES.get(verb, verb)
+        by_role, switches = ps_args(args, cmdlet)
+        rec = "recurse" in switches
+        lists = cmdlet in ("get-childitem", "get-item", "copy-item", "expand-archive", "compress-archive")
+        reads(by_role.get("read", []), rec, content=not lists)
+        if cmdlet == "copy-item":
+            for p in map(P, by_role.get("read", [])):
+                if p:
+                    out.append(("write", p, "copy-out", False, False))
+        writes(by_role.get("remove", []), "remove")
+        writes(by_role.get("write", []))
+        names = [n for n in by_role.get("value:name", []) if n]
+        creates = by_role.get("create", []) or ([state["cwd"]] if names and state["cwd"] else [])
+        if names and not isinstance(names[0], Unknown):
+            creates = [os.path.join(c, names[0]) if c and not isinstance(c, Unknown) else c for c in creates]
+        writes(creates, anc=cmdlet == "new-item")
+        dests(by_role.get("dest", []))
+        for w in by_role.get("newname", []):
+            src = next((P(x) for x in by_role.get("remove", []) if P(x)), None)
+            if src and w and not isinstance(w, Unknown) and not re.search(r"[\\/]", w):
+                out.append(("write", os.path.join(os.path.dirname(src), os.path.normcase(w)), "create", False, False))
+        if cmdlet == "get-childitem" and not by_role.get("read") and state["cwd"]:
+            out.append(("read", state["cwd"], rec, False, False))
+        for w in by_role.get("cd", [])[:1]:
+            out.append(("cd", P(w)))
+        return out
+
+    if verb in ("cd", "pushd", "chdir"):
+        pos, _ = gnu_args(args)
+        target = pos[0] if pos else os.path.expanduser("~")
+        out.append(("cd", None if target is None else (state["cwd"] if target == "-" else P(target))))
+    elif verb == "git":
+        g = git_effect(words, state)
+        if g[1] and g[1] != state["cwd"]:
+            out.append(("blocked-arg", g[1]))  # git -C into the read block reads there
+        out.append(g)
+    elif verb in READERS:
+        pos, opts = gnu_args(args, READERS[verb])
+        flags = short_flags(opts)
+        rec = verb in ALWAYS_RECURSIVE or (verb in ("ls", "diff") and ("R" in flags or "r" in flags or "--recursive" in opts))
+        if verb == "jq" or verb == "yq":
+            pos = pos[1:]
+        if verb == "sort" and "-o" in opts:
+            writes(opts["-o"])
+        lists = verb in LISTERS
+        if not pos and verb in LISTS_CWD_VERBS and state["cwd"]:
+            out.append(("read", state["cwd"], rec, not lists, False))
+        reads(pos, rec, content=not lists)
+    elif verb in GREPS:
+        pos, opts = gnu_args(args, GREPS[verb])
+        flags = short_flags(opts)
+        given = any(k in opts for k in ("-e", "-f", "--regexp", "--file"))
+        if verb == "rg" and ("--files" in opts or "--type-list" in opts):
+            given = True
+        paths = pos if given else pos[1:]
+        reads([v for k in ("-f", "--file") for v in opts.get(k, []) if v])
+        rec = verb in ALWAYS_RECURSIVE or bool(flags & {"r", "R"}) or "--recursive" in opts or "--dereference-recursive" in opts
+        if not paths and rec and state["cwd"]:
+            out.append(("read", state["cwd"], True, True, False))
+        reads(paths, rec)
+    elif verb == "find":
+        k = 0
+        while k < len(args) and not (args[k] is not None and re.match(r"^[-(!]|^\\\(", args[k])):
+            k += 1
+        starts = args[:k] if k else ["."]
+        rest = [(x or "").lower() for x in args[k:]]
+        deletes = "-delete" in rest or any(rest[j] in ("-exec", "-execdir", "-ok", "-okdir")
+                                           and j + 1 < len(rest) and verb_name(rest[j + 1]) in PS_REMOVE_FIND
+                                           for j in range(len(rest)))
+        reads(starts, True, content=False)
+        if deletes:
+            writes(starts, "remove")
+    elif verb in ("sed", "perl"):
+        vals = ("-e", "--expression", "-f", "--file", "-l", "--line-length") if verb == "sed" else ("-e", "-E", "-I", "-M", "-m", "-x")
+        pos, opts = gnu_args(args, vals)
+        inplace = any(re.match(r"-[A-Za-z]*i", k) or k.startswith("--in-place") for k in opts)
+        has_script = any(k in opts for k in ("-e", "--expression", "-f", "--file", "-E"))
+        if verb == "perl" and not has_script:
+            return out  # perl script.pl: the script does what it does
+        for k in ("-e", "-E"):
+            if verb == "perl" and k in opts:
+                out.extend(("code", v) for v in opts[k] if v)
+        files = pos if has_script else pos[1:]
+        if inplace:
+            writes(files, "modify")
+        else:
+            reads(files)
+    elif verb in ("awk", "gawk", "mawk"):
+        pos, opts = gnu_args(args, ("-f", "-v", "-F", "--file", "--assign", "--field-separator"))
+        reads([v for v in opts.get("-f", []) if v])
+        reads(pos if "-f" in opts else pos[1:])
+    elif verb in REMOVERS:
+        pos, _ = gnu_args(args, REMOVERS[verb])
+        writes(pos, "remove")
+    elif verb in MOVERS or verb in ("robocopy", "xcopy"):
+        if verb in ("robocopy", "xcopy"):
+            pos = [a for a in args if not re.fullmatch(r"/[A-Za-z]{1,4}(:\S*)?", a or "")]
+            pos = pos[:2]
+            opts = {"-r": [None]}
+        else:
+            pos, opts = gnu_args(args, MOVERS[verb])
+        target = (opts.get("-t") or opts.get("--target-directory") or [None])[0]
+        dest, sources = (target, pos) if target else ((pos[-1], pos[:-1]) if len(pos) >= 2 else (None, []))
+        rec = bool(short_flags(opts) & {"r", "R", "a"}) or "--recursive" in opts or "--archive" in opts
+        if verb == "mv":
+            writes(sources, "remove")
+        elif verb != "ln":
+            reads(sources, rec, content=False)  # copying .env into a worktree shows the model nothing
+            out.extend(("write", p, "copy-out", False, False) for p in map(P, sources) if p)
+        dests([dest] if dest is not None else [])
+    elif verb in MAKERS:
+        pos, opts = gnu_args(args, MAKERS[verb])
+        if verb == "mkdir":
+            writes(pos, "create-other", anc="p" in short_flags(opts) or "--parents" in opts)
+        elif verb == "truncate":
+            writes(pos, "modify")
+        else:
+            writes(pos)
+    elif verb == "dd":
+        for a in args:
+            if a and a.startswith("of="):
+                writes([a[3:]])
+            elif a and a.startswith("if="):
+                reads([a[3:]])
+    elif verb in ("curl", "wget"):
+        pos, opts = gnu_args(args, ("-o", "--output", "-T", "--upload-file", "-O", "--output-document", "-P",
+                                    "--directory-prefix", "-d", "--data", "-H", "--header", "-X", "-u", "-A",
+                                    "-w", "--write-out", "-F", "--form", "-e", "--referer", "-b", "-c",
+                                    "--max-time", "-m", "--retry", "-x", "--proxy") if verb == "curl" else
+                            ("-O", "--output-document", "-P", "--directory-prefix", "-o", "--output-file",
+                             "--header", "-U", "--user-agent", "-t", "--tries", "-T", "--timeout"))
+        if verb == "curl":
+            writes([v for k in ("-o", "--output") for v in opts.get(k, []) if v])
+            reads([v for k in ("-T", "--upload-file") for v in opts.get(k, []) if v])
+        else:
+            writes([v for k in ("-O", "--output-document") for v in opts.get(k, []) if v])
+            writes([v for k in ("-P", "--directory-prefix") for v in opts.get(k, []) if v], anc=True)
+    elif verb in SHELLS:
+        k, body = 0, None
+        while k < len(args) and (args[k] or "").startswith("-"):
+            if "c" in (args[k] or "")[1:] and not (args[k] or "").startswith("--") and k + 1 < len(args):
+                body = raw[k + 2]
+                break
+            k += 1
+        if body is not None:
+            out.append(("body", "bash", body.replace(LIT, "$")))
+        elif k >= len(args):  # bash, bash -s, bash -l: the script comes on stdin
+            out.extend(("body", "bash", h) for h in simple.heredocs)
+    elif verb in POWERSHELLS:
+        k = 0
+        while k < len(args):
+            a = (args[k] or "").lower()
+            if a in ("-command", "-c") or (a.startswith("-com") and "-command".startswith(a)):
+                body = " ".join(w.replace(LIT, "$") for w in raw[k + 2:])
+                if body.strip() == "-":
+                    out.extend(("body", "ps", h) for h in simple.heredocs)
+                else:
+                    out.append(("body", "ps", body))
+                break
+            if a in ("-file", "-f") or a.startswith(("-enc", "-ec", "-e")) and a not in ("-ex", "-executionpolicy", "-ep"):
+                break  # a script file, or an encoded command: one command to the guard
+            if a in ("-executionpolicy", "-ex", "-ep", "-workingdirectory", "-wd", "-windowstyle", "-w",
+                     "-outputformat", "-of", "-o", "-inputformat", "-if", "-in", "-version", "-v",
+                     "-settingsfile", "-configurationname", "-custompipename", "-configurationfile"):
+                k += 2
+                continue
+            if not a.startswith("-"):  # powershell.exe "Get-Item x": the rest is the command
+                if not a.endswith(".ps1"):
+                    out.append(("body", "ps", " ".join(w.replace(LIT, "$") for w in raw[k + 1:])))
+                break
+            k += 1
+        else:
+            out.extend(("body", "ps", h) for h in simple.heredocs)
+    elif verb in INTERPRETERS:
+        pos, opts = gnu_args(args, INTERPRETERS[verb] + ("-m", "-W", "-X"))
+        for flag in INTERPRETERS[verb]:
+            out.extend(("code", v.replace(LIT, "$")) for v in opts.get(flag, []) if v)
+        out.extend(("code", h) for h in simple.heredocs)
+    return out
+
+
+def git_effect(words, state):
+    """("git", cwd of the call, subcommand, its arguments); an unknown part of a word stays marked."""
+    i, gcwd = 1, state["cwd"]
+    while i < len(words) and (words[i] or "").startswith("-"):
+        if words[i] == "-C" and i + 1 < len(words):
+            gcwd = to_path(words[i + 1], state) or (None if isinstance(words[i + 1], Unknown) else gcwd)
+            i += 2
+        elif words[i] in GIT_GLOBAL_WITH_VALUE and i + 1 < len(words):
+            i += 2
+        else:
+            i += 1
+    if i >= len(words):
+        return ("git", gcwd, "", [])
+    return ("git", gcwd, (words[i] or "").lower(), [str(w or "") for w in words[i + 1:]])
+
+
+# ------------------------------------------------------------------------------- the shell, decided
+
+def decide_shell(cmd, cwd, cfg, shell="bash"):
+    """The verdict on a shell command: the first refusal, else the first ask, else pass."""
+    state = {"cwd": cwd, "vars": {}, "shell": shell}
+    asked = None
+    for verdict, reason in walk(parse(cmd, shell, "top"), state, cfg):
+        if verdict == "deny":
+            return verdict, reason
+        if verdict == "ask" and asked is None:
+            asked = (verdict, reason)
+    refusal = legacy_immutable(cmd, cwd, cfg)
+    if refusal:
+        return "deny", refusal
+    return asked or ("pass", "")  # shell commands never get an explicit allow
+
+
+def walk(simples, state, cfg, depth=0):
+    """Yield (verdict, reason) for every effect of the simple commands, bodies included."""
+    detail = "This command would change, move, overwrite or delete there."
+    for simple in simples:
+        state["shell"] = simple.shell
+        for e in effects(simple, state):
+            kind = e[0]
+            if kind == "cd":
+                state["cwd"] = e[1]
+                # entering a blocked folder is reading there; the blocked folder itself (the cloud
+                # drive) is only a way into the roots below it
+                if e[1] and not any(e[1] == root for root, _, _ in cfg["read_blocked"]):
+                    refusal = blocked_refusal(e[1], cfg)
+                    if refusal:
+                        yield "deny", refusal
+            elif kind == "blocked-arg":
+                refusal = blocked_refusal(e[1], cfg)
+                if refusal:
+                    yield "deny", refusal
+            elif kind == "read":
+                _, p, rec, content, partial = e
+                refusal = read_refusal(p, cfg, rec, content and not partial)
+                if refusal:
+                    yield "deny", refusal
+            elif kind == "write":
+                _, p, op, anc, partial = e
+                if op:  # with an unknown name, only a removal or a change in place is certain
+                    refusal = immutable_refusal(p, op, cfg, detail)
+                    if refusal:
+                        yield "deny", refusal
+                        continue
+                if op == "copy-out" or simple.level == "body":
+                    continue
+                if (os.path.isdir(p) or anc) if partial else creatable(p, anc):
+                    verdict, reason = scope(p, cfg)
+                    if verdict in ("ask", "deny"):
+                        yield verdict, reason
+            elif kind == "git":
+                _, gcwd, sub, args = e
+                if sub:
+                    verdict, reason = decide_git(gcwd or state["cwd"] or os.getcwd(), sub, args, cfg)
+                    if verdict in ("ask", "deny"):
+                        yield verdict, reason
+            elif kind == "body" and depth < 4:
+                inner = {"cwd": state["cwd"], "vars": dict(state["vars"]), "shell": e[1]}
+                yield from walk(parse(e[2], e[1], "body"), inner, cfg, depth + 1)
+                state["shell"] = simple.shell
+            elif kind == "code":
+                refusal = code_reads(e[1], cfg)
+                if refusal:
+                    yield "deny", refusal
+
+
+def code_reads(text, cfg):
+    """A path into the read block written literally in code handed to an interpreter; the refusal or None."""
+    if not cfg["read_blocked"]:
+        return None
+    flat = text.replace("\\\\", "\\").replace("/", "\\")
+    low = flat.lower()
+    for root, _, _ in cfg["read_blocked"]:
+        r = root.replace("/", "\\").lower()
+        variants = [r]
+        if os.name == "nt" and re.match(r"^[a-z]:", r):
+            variants.append("\\" + r[0] + r[2:])  # /c/Users/... as Git Bash writes it
+        for v in variants:
+            start = 0
+            while True:
+                k = low.find(v, start)
+                if k < 0:
+                    break
+                tail = re.match(r"[^\"'\n\r`,;)\]]*", flat[k + len(v):]).group(0).rstrip()
+                p = os.path.normcase(os.path.normpath(root + tail.replace("\\", os.sep)))
+                refusal = read_refusal(p, cfg)
+                if refusal:
+                    return refusal
+                start = k + 1
+    return None
+
+
+# ------------------------------------------------------------------------------- the substring backstop
+# The pattern scan of the first version, kept for one job: a write verb next to a path inside an
+# immutable folder refuses, wherever it stands in the text (a heredoc, a -Command body, a message).
+# It never asks and never reads; the parser above decides everything else.
+
+_EDGE_L = r"(?<![\w.\-/\\$:])"
+_EDGE_R = r"(?=\s|$|;)"
+REMOVE_VERBS = {"rm", "rmdir", "rd", "del", "erase", "remove-item", "ri", "ren", "rename", "rename-item", "rni",
+                "git rm", "git mv"}
+MOVE_VERBS = {"mv", "move", "move-item", "mi"}
+CREATE_VERBS = {"new-item", "ni", "mkdir", "md"}
+WRITE_VERBS = re.compile(
+    _EDGE_L + r"(rm|rmdir|rd|del|erase|Remove-Item|ri|mv|move|Move-Item|mi|ren|rename|Rename-Item|rni|"
+    r"git\s+rm|git\s+mv|Clear-Content|clc|Set-Content|sc|Add-Content|ac|Out-File|Tee-Object|tee|"
+    r"truncate|sed\s+-i\S*|perl\s+-pi\S*|touch|New-Item|ni|mkdir|md)" + _EDGE_R,
+    re.IGNORECASE,
+)
+COPY_VERBS = re.compile(_EDGE_L + r"(cp|copy|Copy-Item|cpi|xcopy|robocopy)" + _EDGE_R, re.IGNORECASE)
+REDIRECT = re.compile(r"(?<![<>&\-\w])\d?>{1,2}\s*(\"[^\"]*\"|'[^']*'|[^\s;|&<>]+)")
+CD = re.compile(r"^\s*(?:cd|Set-Location|sl|pushd)\s+(\S.*?)\s*$", re.IGNORECASE)
+SINKS = {"/dev/null", "nul", "$null", "nul:", "/dev/stdout", "/dev/stderr", "/dev/tty", "con"}
+WINDOWS_VERBS = {"robocopy", "xcopy", "copy", "move", "del", "erase", "rd", "rmdir", "md", "ren", "rename", "dir"}
+
 
 def tokens(seg):
     return [t.strip("\"'") for t in re.findall(r'"[^"]*"|\'[^\']*\'|\S+', seg)]
@@ -543,8 +1760,8 @@ def arguments(rest, verb):
     return args
 
 
-def shell_targets(seg, cwd):
-    """(path, op) for every path the segment writes, and every source it copies (op copy-out)."""
+def legacy_targets(seg, cwd):
+    """(path, op) for every path the segment writes, by pattern, and every source it copies (copy-out)."""
     found = []
     for m in REDIRECT.finditer(seg):
         t = m.group(1).strip("\"'")
@@ -554,12 +1771,14 @@ def shell_targets(seg, cwd):
             found.append((t, "redirect"))
     cm = COPY_VERBS.search(seg)
     wm = WRITE_VERBS.search(seg)
-    if cm and (not wm or cm.start() < wm.start()):
-        verb = cm.group(1).lower()
-        args = arguments(seg[cm.end():], verb)
+    mover = wm and re.sub(r"\s+", " ", wm.group(1).lower()) in MOVE_VERBS
+    if (cm and (not wm or cm.start() < wm.start())) or mover:
+        m = cm if cm and (not wm or cm.start() < wm.start()) else wm
+        verb = m.group(1).lower()
+        args = arguments(seg[m.end():], verb)
         dest = None
-        if verb in ("copy-item", "cpi"):
-            after = tokens(seg[cm.end():])
+        if verb in ("copy-item", "cpi", "move-item", "mi"):
+            after = tokens(seg[m.end():])
             for i, t in enumerate(after[:-1]):
                 if t.lower() in ("-destination", "-dest"):
                     dest = after[i + 1]
@@ -571,7 +1790,7 @@ def shell_targets(seg, cwd):
             dest, args = args[-1], args[:-1]
         if dest:
             found.append((dest, "copy-dest"))
-        found += [(a, "copy-out") for a in args]
+        found += [(a, "remove" if verb in MOVE_VERBS else "copy-out") for a in args]
     elif wm:
         verb = re.sub(r"\s+", " ", wm.group(1).lower())
         kind = "remove" if verb in REMOVE_VERBS else "create-verb" if verb in CREATE_VERBS else "modify-verb"
@@ -594,30 +1813,10 @@ def shell_targets(seg, cwd):
     return ops
 
 
-def shell_reads(seg, cwd):
-    """(path, recursive) for every path the segment lists or reads, copy sources included."""
-    reads = []
-    m = READ_VERBS.search(seg)
-    if m:
-        verb = m.group(1).lower()
-        rest = seg[m.end():]
-        toks = tokens(rest)
-        recursive = verb in RECURSES or any(
-            t in ("-Recurse", "--recursive", "/s", "/S") or t.lower() == "-recurse"
-            or re.fullmatch(r"-[a-zA-Z]*[rR][a-zA-Z]*", t) and verb not in ("head", "tail", "wc", "cat", "type")
-            for t in toks)
-        args = arguments(rest, verb)
-        if not args and verb in LISTS_CWD:
-            reads.append((cwd, recursive))
-        reads += [(norm(a, cwd), recursive) for a in args if not (a.startswith("$") and expand(a) is None)]
-    for p, op in shell_targets(seg, cwd):
-        if op == "copy-out":
-            reads.append((p, False))
-    return reads
-
-
-def decide_shell(cmd, cwd, cfg):
-    asked = None
+def legacy_immutable(cmd, cwd, cfg):
+    """The refusal when a write verb meets an immutable folder anywhere in the text; None otherwise."""
+    if not cfg["immutable"]:
+        return None
     for seg in re.split(r"[;\n|]|&&|\|\|", cmd):
         m = CD.match(seg)
         if m:
@@ -625,30 +1824,15 @@ def decide_shell(cmd, cwd, cfg):
             if target and target != "-":
                 cwd = norm(target, cwd)
             continue
-        git = git_call(seg, cwd)
-        if git:
-            verdict, reason = decide_git(*git, cfg)
-            if verdict == "deny":
-                return verdict, reason
-            if verdict == "ask" and asked is None:
-                asked = (verdict, reason)
-        if cfg["read_blocked"]:
-            for p, recursive in shell_reads(seg, cwd):
-                refusal = read_refusal(p, cfg, recursive)
-                if refusal:
-                    return "deny", refusal
-        for p, op in shell_targets(seg, cwd):
+        try:
+            targets = legacy_targets(seg, cwd)
+        except (ValueError, OSError):
+            continue
+        for p, op in targets:
             refusal = immutable_refusal(p, op, cfg, "This command would change, move, overwrite or delete there.")
             if refusal:
-                return "deny", refusal
-            if op == "copy-out":
-                continue  # a copy's source is read, not written
-            verdict, reason = scope(p, cfg)
-            if verdict in ("ask", "deny") and asked is None:
-                asked = (verdict, reason)
-    if asked:
-        return asked
-    return "pass", ""  # shell commands never get an explicit allow
+                return refusal
+    return None
 
 
 # ------------------------------------------------------------------------------- git
@@ -656,30 +1840,6 @@ def decide_shell(cmd, cwd, cfg):
 GIT_GLOBAL_WITH_VALUE = {"-c", "--git-dir", "--work-tree", "--namespace", "--config-env", "--exec-path"}
 GIT_WRAPPERS = {"&", "(", "sudo", "command", "time", "exec", "env", "nohup", "call"}
 PUSH_WITH_VALUE = {"-o", "--push-option", "--repo", "--receive-pack", "--exec"}
-
-
-def git_call(seg, cwd):
-    """(cwd of the git call, subcommand, its arguments) when the segment runs git; None otherwise."""
-    toks = tokens(seg)
-    i = 0
-    while i < len(toks) and (toks[i] in GIT_WRAPPERS or re.fullmatch(r"[A-Za-z_]\w*=\S*", toks[i])):
-        i += 1
-    if i >= len(toks) or not re.fullmatch(r"\(?(?:.*[\\/])?git(?:\.exe)?", toks[i], re.IGNORECASE):
-        return None
-    i += 1
-    gcwd = cwd
-    while i < len(toks) and toks[i].startswith("-"):
-        if toks[i] == "-C" and i + 1 < len(toks):
-            gcwd = norm(toks[i + 1], gcwd)
-            i += 2
-        elif toks[i] in GIT_GLOBAL_WITH_VALUE and i + 1 < len(toks):
-            i += 2
-        else:
-            i += 1
-    if i >= len(toks):
-        return None
-    args = [t.rstrip(")") for t in toks[i + 1:]]
-    return gcwd, toks[i].lower(), args
 
 
 def flag_sets(args):
@@ -742,6 +1902,15 @@ def is_protected(name, cfg):
     return n in cfg["protected"] or n.split("/", 1)[-1] in cfg["protected"]
 
 
+def may_be_protected(name, cfg):
+    """True when a name with an unknown part could still be a protected branch: `worktree-$w`
+    cannot be main, `$b` can."""
+    if UNKNOWN not in (name or ""):
+        return False
+    n = re.sub(r"^refs/heads/", "", name.lower()).replace("*", "[*]").replace(UNKNOWN, "*")
+    return any(fnmatch.fnmatchcase(b, n) or fnmatch.fnmatchcase(b, n.split("/", 1)[-1]) for b in cfg["protected"])
+
+
 def push_destination(ref, gcwd):
     r = ref.lstrip("+")
     if ":" in r:
@@ -756,7 +1925,7 @@ LOSES_WORK = ("this discards every uncommitted change in the working tree, with 
 
 
 def decide_git(gcwd, sub, args, cfg):
-    """git guardrails: refuse what loses work or rewrites a protected branch; ask before other branch deletions."""
+    """git guardrails: refuse what loses work or rewrites a protected branch; ask before a remote branch deletion."""
     longs, shorts = flag_sets(args)
     if sub == "push":
         pos = positional(args, PUSH_WITH_VALUE)
@@ -767,15 +1936,15 @@ def decide_git(gcwd, sub, args, cfg):
             names = removed + ([push_destination(r, gcwd) for r in refspecs if not r.startswith(":")] if delete else [])
             if any(n is None or is_protected(n, cfg) for n in names):
                 return "deny", "a protected branch is never deleted, on the remote or locally."
-            return "ask", (f"this deletes the remote branch {', '.join('`%s`' % n for n in names) or '(unnamed)'}: "
-                           f"branch deletions wait for the person's yes.")
+            return "ask", (f"this deletes the remote branch {', '.join('`%s`' % shown(n) for n in names) or '(unnamed)'}: "
+                           f"remote branch deletions wait for the person's yes.")
         force = ("f" in shorts or longs & {"--force", "--force-with-lease", "--mirror"}
                  or any(r.startswith("+") for r in refspecs))
         if force:
             if longs & {"--all", "--mirror", "--branches"}:
                 return "deny", "a force push of every branch rewrites the protected branches too; push one named branch."
             dests = [push_destination(r, gcwd) for r in refspecs] or [current_branch(gcwd)]
-            if any(d is None for d in dests):
+            if any(d is None or may_be_protected(d, cfg) for d in dests):
                 return "deny", ("a force push whose branch the guard cannot see may hit a protected branch: name the branch "
                                 "(`git push --force-with-lease origin <branch>`).")
             if any(is_protected(d, cfg) for d in dests):
@@ -793,10 +1962,14 @@ def decide_git(gcwd, sub, args, cfg):
         if any(is_protected(n, cfg) for n in names):
             return "deny", "a protected branch is never deleted, locally or on the remote."
         if "D" in shorts or "f" in shorts or "--force" in longs:
-            return "deny", ("`git branch -D` deletes a branch even when its work is merged nowhere; "
-                            "`git branch -d` refuses an unmerged branch and asks the person first.")
-        return "ask", (f"this deletes the branch {', '.join('`%s`' % n for n in names) or '(unnamed)'}: "
-                       f"branch deletions wait for the person's yes.")
+            return "deny", ("`git branch -D` deletes a branch even when its work is merged nowhere, so the person "
+                            "runs it (`! git branch -D <name>` in Claude Code, for a squash-merged branch); "
+                            "`git branch -d` deletes a merged branch and passes.")
+        if not names or any(may_be_protected(n, cfg) for n in names):
+            return "ask", (f"this deletes the branch {', '.join('`%s`' % shown(n) for n in names) or '(unnamed)'}, "
+                           f"whose name the guard cannot read, and it could be a protected branch: name the branch.")
+        return "pass", ""  # git itself refuses -d on a branch that is not merged
+    # git worktree remove passes, with or without --force: no rule below matches it
     if sub == "checkout":
         specs = args[args.index("--") + 1:] if "--" in args else positional(args)
         if any(s in WHOLE_TREE for s in specs):
@@ -849,6 +2022,9 @@ def show_config():
     print("Reads refused below (except the folders in brackets):")
     for root, keep, _ in cfg["read_blocked"]:
         print(f"  {root}   [{'; '.join(keep)}]")
+    print("Secrets (reads refused): " + ", ".join(cfg["secret_names"]) + "; folders: "
+          + "; ".join(cfg["secret_dirs"]) + "; files: " + "; ".join(cfg["secret_files"])
+          + "; templates allowed: " + ", ".join(sorted(cfg["secret_except"])))
     print("Grant files looked for:")
     for g in cfg["grant_files"]:
         print(f"  {g}")
@@ -1183,7 +2359,7 @@ def _self_test(base):
         ("git: clean -n (a dry run) passes", B("git clean -n"), res, "pass"),
         ("git: branch -D", B("git branch -D feature-x"), res, "deny"),
         ("git: branch -d main", B("git branch -d main"), res, "deny"),
-        ("git: branch -d of another branch asks", B("git branch -d feature-x"), res, "ask"),
+        ("git: branch -d of another branch passes (git refuses it unless merged)", B("git branch -d feature-x"), res, "pass"),
         ("git: push --delete main", B("git push origin --delete main"), res, "deny"),
         ("git: push --delete of another branch asks", B("git push origin --delete feature-x"), res, "ask"),
         ("git: push :branch asks", B("git push origin :feature-x"), res, "ask"),
@@ -1192,14 +2368,123 @@ def _self_test(base):
         ("git: restore --staged . passes", B("git restore --staged ."), res, "pass"),
         ("git: checkout -- one file passes", B("git checkout -- src/a.py"), res, "pass"),
         ("git: a commit message that names the rules passes", B('git commit -m "Refuse git reset --hard and git clean"'), res, "pass"),
-        ("git: unattended branch deletion is refused", B("git branch -d feature-x"), res, "deny", m_away, "morning report"),
+        ("git: unattended remote branch deletion is refused", B("git push origin --delete feature-x"), res, "deny", m_away, "morning report"),
     ]
     failed += _run_cases(third, m)
     total += len(third)
 
+    print("\nPart 4: the shell parser, variables, git, grants by folder and file, secrets")
+    saved = {k: os.environ.get(k) for k in ("TEMP", "TMP", "LOCALAPPDATA", "USERPROFILE", "HOME", "UNSET_VAR_FOR_TEST")}
+    try:
+        f4, n4 = _part4(j, home, dev, res, D, V, cloud, private, archived, raw_file, mk, future)
+        failed += f4
+        total += n4
+    finally:
+        for k, v in saved.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
     print(f"\n{total - failed} of {total} checks passed ({len(first) + len(proto) + 2} in part 1, {len(second)} in part 2, "
-          f"{len(third)} in part 3)." + (" The guard's logic works on this computer." if not failed else ""))
+          f"{len(third)} in part 3, {n4} in part 4)." + (" The guard's logic works on this computer." if not failed else ""))
     return 1 if failed else 0
+
+def _part4(j, home, dev, res, D, V, cloud, private, archived, raw_file, mk, future):
+    """The parser, variables, git, grants by folder and file, secrets; returns (failed, count)."""
+    W = lambda p: ("Write", {"file_path": p})  # noqa: E731
+    R = lambda p: ("Read", {"file_path": p})  # noqa: E731
+    B = lambda c: ("Bash", {"command": c})  # noqa: E731
+    P = lambda c: ("PowerShell", {"command": c})  # noqa: E731
+    tmp, local = j("machine-temp"), os.path.join(home, "AppData", "Local")
+    downloads, exports = os.path.join(home, "Downloads"), os.path.join(home, "Exports")
+    for d in (tmp, local, exports, os.path.join(private, "Shared", "sub"), os.path.join(home, ".ssh"),
+              os.path.join(res, "code"), os.path.join(private, "Viaclip")):
+        os.makedirs(d, exist_ok=True)
+    for f in (os.path.join(res, ".env"), os.path.join(res, ".env.example"), os.path.join(res, "code", "credentials.py"),
+              os.path.join(home, ".ssh", "id_ed25519"), os.path.join(home, ".claude", ".credentials.json"),
+              os.path.join(private, "single.pdf"), os.path.join(res, "a.vtt")):
+        _write(f)
+    os.environ.update({"TEMP": tmp, "TMP": tmp, "LOCALAPPDATA": local, "USERPROFILE": home, "HOME": home})
+    os.environ.pop("UNSET_VAR_FOR_TEST", None)
+    grant2 = j("machine-job2", "write-scope.json")
+    os.makedirs(os.path.dirname(grant2), exist_ok=True)
+    with open(grant2, "w", encoding="utf-8") as fh:
+        json.dump({"plan": "self-test", "expires": future,
+                   "read": [os.path.join(private, "Shared"), os.path.join(private, "single.pdf")],
+                   "write": [os.path.join(downloads, "out.csv"), exports.replace("\\", "/") + "/"]}, fh)
+    cli_grant = j("machine-job3", "write-scope.json")
+    g = write_grant(cli_grant, "read", [os.path.join(private, "Viaclip")], hours=2, plan="self-test")
+    g = write_grant(cli_grant, "write", [os.path.join(downloads, "report.docx")], hours=1)
+    kw = dict(mk, writable=mk["writable"] + [tmp], secrets=secrets_for(home),
+              grant_files=mk["grant_files"] + [grant2, cli_grant])
+    m4 = build_config(attended=None, pause_flag=j("nopause"), **kw)
+    away = build_config(attended="0", pause_flag=j("nopause"), **kw)
+    job = j("machine-job")
+    raw = os.path.dirname(raw_file)
+    drive_form = ("/" + dev[0].lower() + dev[2:].replace("\\", "/")) if os.name == "nt" else dev
+    secrets = "secrets are not for the model"
+    ask_p = "ask the person for the file"
+    cases = [
+        ("Quoting: pwsh -Command with New-Item \\\"$env:TEMP\\x\\\" in Bash", B('pwsh -NoProfile -Command "New-Item \\"\\$env:TEMP\\keep-awake.stop\\" -Force | Out-Null; Start-Sleep 8"'), res, "pass", away),
+        ("Quoting: New-Item \"$env:TEMP\\x\" in PowerShell", P('New-Item "$env:TEMP\\keep-awake.stop" -Force | Out-Null'), res, "pass", away),
+        ("Quoting: a commit message that quotes 2>/dev/null)", B('git commit -q -m "a redirect inside \\$( ... ): 2>/dev/null) was refused"'), res, "pass", away),
+        ("Quoting: a heredoc whose lines hold p:, 0: and 1:", B(f'cat > "{job}/v.py" <<\'PYEOF\'\nfor p in sys.argv[1:]:\n    print(f"{{p}}: ok")\nrm p: 0: 1:\nPYEOF'), res, "pass", away),
+        ("Parse: a sed script is no path", B(f'sed -i \'/^    c=s.get("collect") or {{}}$/d\' "{job}/srcs.py"'), res, "pass", away),
+        ("Parse: a grep pattern with quotes and slashes is no path", B('grep -rn "\\"/api/me\\"\\|\'/api/me\'" src/*.py | head -5'), res, "pass", away),
+        ("Parse: escaped quotes inside a --body", B('gh issue comment 109 --body "**Confirmed:** the reading of \\"own points\\" stays open"'), res, "pass", away),
+        ("Parse: a Git Bash drive path for mkdir -p", B(f'mkdir -p "{drive_form}/research/newdir" && cp a.txt "{drive_form}/research/newdir/"'), res, "pass", away),
+        ("Parse: a heredoc fed to bash is code and parsed", B(f'bash <<\'EOF\'\nrm "{raw_file}"\nEOF'), res, "deny"),
+        ("Backstop: a heredoc that writes rm on a raw file is still refused", B(f'cat > notes.md <<\'EOF\'\nrm "{raw_file}"\nEOF'), res, "deny"),
+        ("Body: the write scope is not inspected in a -Command body", B(f'pwsh -Command "Set-Content -Path \'{downloads}/x.txt\' -Value 1"'), res, "pass"),
+        ("Body: the originals still hold in a -Command body", B(f'pwsh -Command "Remove-Item \'{raw_file}\'"'), res, "deny"),
+        ("Body: the read block still holds in a -Command body", B(f'pwsh -NoProfile -Command "Get-ChildItem \'{private}\'"'), res, "deny", m4, ask_p),
+        ("Variables: an assignment resolves a later word", B(f'D="{downloads}"; touch "$D/x.txt"'), res, "ask"),
+        ("Variables: a loop variable leaves the known folder", B(f'for s in a b; do echo x > "{downloads}/all-$s.log"; done'), res, "ask"),
+        ("Variables: a known folder of originals with rm", B(f'R="{raw}"; for f in a b; do rm "$R/$f"; done'), res, "deny"),
+        ("Expansion: ~/.claude", B("touch ~/.claude/x.txt"), res, "pass", away),
+        ("Expansion: ~/Downloads asks", B("touch ~/Downloads/y.txt"), res, "ask"),
+        ("Expansion: %LOCALAPPDATA% asks", P('New-Item "%LOCALAPPDATA%\\x.txt"'), res, "ask"),
+        ("Read block: cd into it, then a tool the guard does not know", B(f'cd "{private}" && pdftotext a.pdf -'), res, "deny", m4, ask_p),
+        ("Read block: an argument into it", B(f'pdftotext "{private}/report.pdf" -'), res, "deny", m4, ask_p),
+        ("Read block: git -C into it", B(f'git -C "{private}" log -1'), res, "deny"),
+        ("Read block: cd into the cloud drive, then into a root", B(f'cd "{cloud}" && cat research/projects/x.txt'), res, "pass"),
+        ("Read block: a Python heredoc that opens a blocked file", B(f'python - <<\'EOF\'\nprint(open(r"{private}/report.pdf", "rb").read(9))\nEOF'), res, "deny", m4, ask_p),
+        ("Read block: echo of a blocked path is no read", B(f'echo "{private}/report.pdf"'), res, "pass"),
+        ("git: branch -d passes unattended", B("git branch -d feature-x"), res, "pass", away),
+        ("git: branch -d in a loop over worktree-$w", B('for w in a b; do git worktree remove ".claude/worktrees/$w"; git branch -d "worktree-$w"; done'), res, "pass", away),
+        ("git: branch -d of a name the guard cannot read asks", B('git branch -d "$b"'), res, "ask"),
+        ("git: worktree remove --force passes", B("git worktree remove --force .claude/worktrees/wt"), res, "pass", away),
+        ("git: an unknown ref is not the whole tree", P("foreach ($ref in @('a','b')) { git checkout -q --detach $ref }"), res, "pass"),
+        ("git: a force push to an unknown branch is refused", B('git push --force origin "$b"'), res, "deny"),
+        ("Grant: a folder read grant opens its subfolders", R(os.path.join(private, "Shared", "sub", "a.pdf")), res, "pass"),
+        ("Grant: a file read grant opens that file", R(os.path.join(private, "single.pdf")), res, "pass"),
+        ("Grant: and not its neighbour", R(os.path.join(private, "single2.pdf")), res, "deny", m4, ask_p),
+        ("Grant: a file write grant opens that file", W(os.path.join(downloads, "out.csv")), res, "pass"),
+        ("Grant: and not its neighbour", W(os.path.join(downloads, "out2.csv")), res, "ask"),
+        ("Grant: a folder write grant opens its subfolders", W(os.path.join(exports, "deep", "x.txt")), res, "pass"),
+        ("Grant: --grant read of a folder", R(os.path.join(private, "Viaclip", "x.pdf")), res, "pass"),
+        ("Grant: --grant write of a file", W(os.path.join(downloads, "report.docx")), res, "pass"),
+        ("Secrets: Read .env", R(os.path.join(res, ".env")), res, "deny", m4, secrets),
+        ("Secrets: Read .env.example passes", R(os.path.join(res, ".env.example")), res, "pass"),
+        ("Secrets: Read credentials.py, source code, passes", R(os.path.join(res, "code", "credentials.py")), res, "pass"),
+        ("Secrets: Read ~/.ssh/id_ed25519", R(os.path.join(home, ".ssh", "id_ed25519")), res, "deny", m4, secrets),
+        ("Secrets: Read ~/.claude/.credentials.json", R(os.path.join(home, ".claude", ".credentials.json")), res, "deny"),
+        ("Secrets: Read a .pem, a .key, a token JSON", R(os.path.join(res, "gh-token.json")), res, "deny"),
+        ("Secrets: cat .env", B("cat .env"), res, "deny", m4, secrets),
+        ("Secrets: Get-Content .env", P("Get-Content .env"), res, "deny"),
+        ("Secrets: ls -la .env lists a name and passes", B("ls -la .env"), res, "pass"),
+        ("Secrets: cp .env into a worktree passes (nothing shown)", B("cp .env .claude/worktrees/wt/"), res, "pass"),
+        ("Secrets: a script loads .env itself", B("python -I app.py --check"), res, "pass"),
+        ("Deposit: a new folder and a transcript by the shell", B(f'T="{D}/meeting-transcripts/new-series"; mkdir -p "$T" && cp a.vtt "$T/2026-11-09 x - transcript.vtt"'), res, "pass"),
+        ("Archive: a backup copy out of the archive is a read", B(f'cp "{archived}" "{res}/backup.md"'), res, "pass"),
+    ]
+    failed = _run_cases(cases, m4)
+    ok = g.get("read") and g.get("write") and datetime.fromisoformat(g["expires"]) > datetime.now() + timedelta(hours=1.5)
+    failed += not ok
+    print(f"{'ok  ' if ok else 'FAIL'} grant     --grant keeps both lists and the later expiry")
+    return failed, len(cases) + 1
+
 
 
 def main():
@@ -1207,6 +2492,8 @@ def main():
         return self_test()
     if "--show-config" in sys.argv[1:]:
         return show_config()
+    if "--grant" in sys.argv[1:]:
+        return grant_cli(sys.argv[1:])
     return run_hook(sys.stdin.read(), build_config(), sys.stdout, sys.stderr)
 
 

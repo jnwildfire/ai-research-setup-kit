@@ -80,15 +80,27 @@ foresaw. For a write the job needs, the question belongs before the job, not dur
 
 So every job that may run unattended names in its plan the folders it will write to and where it
 saves its results. Anything outside the roots is asked for there, in the plan, and you answer once.
-After your yes, the session writes a **grant**: a small file with the folders, the plan it belongs
-to, and an expiry time (`kit/hooks/write-scope.example.json`). Its `write` list opens folders to
-write in; its `read` list opens exact files in a blocked folder, or a whole folder written with `/**`
-at the end, so a job that needs one document from the closed part of the drive names it in the plan
-instead of being refused at night. The guard reads the grant from the job's own folder (the folder in
+After your yes, the session writes a **grant**: a small file with the paths, the plan it belongs
+to, and an expiry time (`kit/hooks/write-scope.example.json`; `python guard.py --grant read|write
+PATH...` writes it). A folder opens with its subfolders, a file opens alone, in the `write` list (where
+results may be saved) and in the `read` list (what may be read in a blocked folder) alike, so a job
+that needs one document from the closed part of the drive names it in the plan instead of being
+refused at night. The same holds in an attended session: when you point the agent to a folder or a
+file outside the roots, it records exactly that and nothing wider. The guard reads the grant from the job's own folder (the folder in
 `CLAUDE_JOB_DIR`, see below) or, for one attended session, from `.claude/write-scope.local.json` in
 the project, and ignores it once `expires` has passed. A grant widens the roots; it never opens an
 immutable folder. The plan is the single place where you grant, and the prompt stays the fallback
 when you are at the keyboard.
+
+**To test on your next night shift: `permissions.denyInsteadOfPrompting`.** Claude Code's changelog
+for 2.1.319 (6 November 2026) says that with it, a tool call that would wait on a permission prompt
+is denied and the turn continues, in terminal sessions, subagents and teammates. The settings
+reference did not list it yet when this was written, so its scope is unconfirmed. Do not put it in
+the project settings, where it would also silence your attended sessions: start the night job with
+a launch-time settings file, `claude --settings <file>` holding
+`{"permissions":{"denyInsteadOfPrompting":true}}`, and check in the morning report that a call
+outside the grants was denied without a stall. Keep the guard's own unattended refusal (below) as
+the fallback either way.
 
 ## Nobody at the keyboard: two variables a background job carries
 
@@ -114,13 +126,18 @@ two variables, and run `python guard.py --show-config`, which reports what the g
 
 ## What the guard cannot do
 
-The guard reads shell commands as text and matches patterns; it does not run them in its head the
-way a shell would. A Python script that writes files is one command to the guard, which sees only
-the paths written on the command line. A command built from variables it cannot resolve is let
-through. So the guard is a net under the rules, not a sandbox. Claude Code's permission prompts, and
-in auto mode its classifier, are the second net, and the rules file still says why each rule exists.
+The guard parses shell commands the way the shell reads them (quotes, `$( )`, heredocs,
+`pwsh -Command` bodies, variables set earlier in the same command), so a quoted message or a sed
+script is not mistaken for a path; the folders of originals are also guarded by a substring scan
+over the whole text. Still, a Python script that writes files is one command to the guard, which
+sees only the paths written on the command line, and a word built from a variable it cannot know is
+no path to it. So the guard is a net under the rules, not a sandbox. Claude Code's permission
+prompts, and in auto mode its classifier, are the second net, and the rules file still says why
+each rule exists. Claude Code's own sandbox (the files and the network a command may reach) exists
+on macOS, Linux and WSL2, not on native Windows; where it exists it is the strongest protection for
+an unattended run, and the guard is the Windows substitute.
 
-Test the guard before you trust it: `python guard.py --self-test` runs about 150 synthetic actions
+Test the guard before you trust it: `python guard.py --self-test` runs about 210 synthetic actions
 against a temporary folder tree, and `kit/hooks/README.md` gives a live test that ends with the
 agent refused in front of you. A guard that has never refused anything may simply not be running.
 A test that cannot fail proves nothing either: when the guard was built, each rule was switched off
