@@ -23,6 +23,12 @@ someone who has never used a terminal.
 This kit starts where his ends: with a researcher whose work already spans several projects, code
 repositories, a shared data drive and a notes vault, and who wants one setup across all of it.
 
+## The seminar talk
+
+This kit grew out of the talk of 3 November 2026 at DTU, "Working with an AI agent in research", of
+which the author gave the second half after Kevin Smith's: [the slides of that second half, as a PDF](docs/seminar/2026-11-03_Working-with-an-AI-agent-in-research_part-2_Wildfeuer.pdf).
+The slides are under CC BY 4.0 like the kit's texts; credit them as "Johannes Wildfeuer, DTU".
+
 ## What this kit adds
 
 1. **Three roots instead of one folder**: code in git, data on the institution's drive, knowledge in

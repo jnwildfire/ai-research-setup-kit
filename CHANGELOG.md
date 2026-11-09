@@ -35,6 +35,9 @@ review of v0.1.2 by Kevin Smith's Claude (points 1 to 3 accepted, point 4 taken 
   than carrying settings over, raise for the hard case and keep what the sweep justifies.
 - **Credits**: "reconnaissance first" was said by Kevin Smith in the seminar of 3 November 2026, not
   in his public kit; the talk rules follow Patrick Winston's lecture, now named.
+- **The seminar slides**: the second half of the talk of 3 November 2026 at DTU, as a PDF in
+  `docs/seminar/`, linked from the README; CC BY 4.0 like the kit's texts, credit "Johannes
+  Wildfeuer, DTU".
 
 ## v0.1.2 (unreleased, 6 November 2026)
 

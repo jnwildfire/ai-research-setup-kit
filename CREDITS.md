@@ -106,3 +106,6 @@ is the only ask." Copyright (c) 2025 Xule Lin, MIT License. Its requested attrib
 Johannes Wildfeuer, PhD student, DTU (Technical University of Denmark), jniwi@dtu.dk. The kit was
 made in conversation with Claude Code, Anthropic's AI agent; the author reads and decides every text
 and script before a release.
+
+The seminar slides in `docs/seminar/` (the second half of the talk of 3 November 2026 at DTU):
+Johannes Wildfeuer, DTU, under CC BY 4.0 like the kit's texts.
