@@ -25,6 +25,12 @@ review of v0.1.2 by Kevin Smith's Claude (points 1 to 3 accepted, point 4 taken 
   refused. A deposit is any new file or folder, so `mkdir -p` and `cp` into a deposit folder pass; a
   copy out of an `existing-only` archive is a read. Self-test 209 of 209 on Windows; each new rule
   switched off turns its cases red.
+- **A note moved into a deposit folder by the folder's name** (11 November 2026): an Obsidian
+  connector reads a destination ending in `/` as "into this folder, keeping the file name", but the
+  guard checked it as written, found the folder existing and refused the move as a change to the
+  originals. A destination ending in `/` or `\` is now that folder plus the note's own name; a name
+  already filed there is still refused. Found filing a processed inbox note on the author's computer.
+  Self-test 213 of 213 on Windows.
 - **Guide 04**: grants by folder or file; `permissions.denyInsteadOfPrompting` (Claude Code 2.1.319,
   scope unconfirmed) as the thing to test on the next night shift through a launch-time settings
   file, with the guard's unattended refusal kept as the fallback (review point 2); Claude Code's

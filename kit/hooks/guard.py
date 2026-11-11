@@ -651,6 +651,10 @@ def decide_note(action, ti, cfg):
         val = ti.get(key)
         if not isinstance(val, str) or not val:
             continue
+        if key != "path" and val.endswith(("/", "\\")) and isinstance(ti.get("path"), str):
+            # An Obsidian connector reads a trailing slash as "into this folder, keeping the file name"; the
+            # folder itself exists, so checked as written a move into a deposit folder counted as a change to it.
+            val += os.path.basename(ti["path"].replace("\\", "/"))
         p = norm(os.path.join(cfg["notes_root"], val.lstrip("/\\")), cfg["notes_root"])
         exists = os.path.exists(p)
         if key == "path":
@@ -2084,11 +2088,11 @@ def _self_test(base):
     # ---- part 1: the roots, the originals, the grants, the battery pause (no read block)
     print("Part 1: roots, originals, write grants, unattended, battery")
     for d in ("code/repo", "data/projects/p1/data/raw", "data/projects/p1/data/processed",
-              "data/meeting-transcripts", "notes/projects", "notes/originals", "outside/granted",
+              "data/meeting-transcripts", "notes/projects", "notes/originals", "notes/filed", "outside/granted",
               "outside/expired", "job", "oldjob", "work"):
         os.makedirs(j(*d.split("/")), exist_ok=True)
     for f in ("data/projects/p1/data/raw/original.csv", "data/meeting-transcripts/2026-01-15.vtt",
-              "notes/originals/kept.md", "notes/projects/plan.md", "outside/old.txt"):
+              "notes/originals/kept.md", "notes/projects/plan.md", "notes/filed/old.md", "outside/old.txt"):
         _write(j(*f.split("/")))
     future = (datetime.now() + timedelta(days=1)).isoformat(timespec="minutes")
     with open(j("job", "write-scope.json"), "w", encoding="utf-8") as fh:
@@ -2105,7 +2109,8 @@ def _self_test(base):
               writable=[j("code"), j("data"), j("notes"), j("work")],
               immutable=[(j("data", "projects", "*", "data", "raw"), "deposit-only", "raw data is never changed"),
                          (j("data", "meeting-transcripts"), "deposit-only", "transcripts are kept as recorded"),
-                         (j("notes", "originals"), "never", "the originals of the notes")],
+                         (j("notes", "originals"), "never", "the originals of the notes"),
+                         (j("notes", "filed"), "deposit-only", "a filed note stays as filed")],
               read_blocked=[], grant_files=[j("job", "write-scope.json"), j("oldjob", "write-scope.json")],
               note_prefix="mcp__obsidian__vault_", unattended="deny",
               continue_file=j("power", "continue"))  # the session's own environment never decides
@@ -2164,6 +2169,10 @@ def _self_test(base):
         ("Connector: new note in a never-folder", N("write", path="originals/new.md"), repo, "deny"),
         ("Connector: patch an ordinary note", N("patch", path="projects/plan.md"), repo, "pass"),
         ("Connector: move a note into a never-folder", N("move", path="projects/plan.md", newPath="originals/plan.md"), repo, "deny"),
+        ("Connector: move a note into a deposit folder by its new name", N("move", path="projects/plan.md", newPath="filed/plan.md"), repo, "pass"),
+        ("Connector: move to the deposit folder ending in / keeps the name", N("move", path="projects/plan.md", destination="filed/"), repo, "pass"),
+        ("Connector: the same with backslashes", N("move", path="projects\\plan.md", destination="filed\\"), repo, "pass"),
+        ("Connector: move to the folder onto a filed note", N("move", path="projects/old.md", destination="filed/"), repo, "deny"),
         ("Connector: read is never checked", N("read", path="originals/kept.md"), repo, "pass"),
         ("allow mode: Write in the repository", W(os.path.join(repo, "a.py")), repo, "allow", cfg_allow),
         ("allow mode: shell is never allowed outright", B("python make.py > out.txt"), repo, "pass", cfg_allow),
