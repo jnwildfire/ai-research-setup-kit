@@ -31,6 +31,13 @@ review of v0.1.2 by Kevin Smith's Claude (points 1 to 3 accepted, point 4 taken 
   originals. A destination ending in `/` or `\` is now that folder plus the note's own name; a name
   already filed there is still refused. Found filing a processed inbox note on the author's computer.
   Self-test 213 of 213 on Windows.
+- **A filed transcript takes a corrections block** (12 November 2026): misheard names corrected only
+  in the meeting note met the next reader of the transcript again. A transcript stays deposit-only,
+  with one exception: an Edit or Write that changes nothing outside a block from `NOTE CORRECTIONS`
+  to `NOTE END CORRECTIONS`, at the top (after the `WEBVTT` line in a `.vtt`) or the very end, with
+  no blank line and no `-->` inside, so a `.vtt` stays valid. The top was chosen because a reader
+  starts there; a separate corrections file was rejected because a reader of the transcript alone
+  would not see it. Shell edits stay refused. 15 new self-test cases.
 - **Guide 04**: grants by folder or file; `permissions.denyInsteadOfPrompting` (Claude Code 2.1.319,
   scope unconfirmed) as the thing to test on the next night shift through a launch-time settings
   file, with the guard's unattended refusal kept as the fallback (review point 2); Claude Code's

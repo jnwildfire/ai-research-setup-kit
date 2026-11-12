@@ -18,6 +18,7 @@ script here: not a hook, but a check the agent runs on a finished note before it
 |---|---|
 | Adds a new file or folder to a folder of originals (`deposit-only`: raw data, transcripts) | pass: a deposit, by any tool, `mkdir -p` and `cp` included |
 | Changes, overwrites, moves or deletes a file there | refused, with the reason |
+| Edits a filed transcript only inside its corrections block (`NOTE CORRECTIONS` to `NOTE END CORRECTIONS`, at the top or the very end, no blank line and no `-->` inside, so a `.vtt` stays valid) | pass: the one change a transcript takes, so the misheard names travel with the file |
 | Writes, moves, copies or deletes anything in a `never` folder (a staging folder only you fill) | refused |
 | Creates, moves or deletes in an `existing-only` folder (an archive a script fills); changing a file in place, or copying one out, passes | refused |
 | Writes inside the roots, `~/.claude`, the temporary folder, a job's own folder, a granted folder or file | pass, silently: Claude Code's own permissions decide |

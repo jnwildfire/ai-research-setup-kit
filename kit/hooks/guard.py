@@ -23,6 +23,7 @@ The rules, as the configuration block below sets them:
 | What | Verdict |
 |---|---|
 | a folder of originals, "deposit-only" (raw data, transcripts) | a new file or folder passes; changing, overwriting, moving or deleting one is refused |
+| a filed transcript in `meeting-transcripts/` | the one change it takes: an Edit or Write that touches only its corrections block (at the top, or the very end) passes |
 | a folder of originals, "never" (a staging folder that only you fill) | every write, move, copy or delete is refused |
 | a folder of originals, "existing-only" (an archive that a script fills) | changing a file in place and copying one out pass; a new file, a move or a delete is refused |
 | writes inside the roots, ~/.claude, the temporary folder, the job's folder, a granted folder or file | pass |
@@ -137,7 +138,9 @@ def immutable_for(data, notes):
         (data + "/projects/*/data/raw", "deposit-only",
          "raw data is never changed after download; correct it downstream, in data/processed"),
         (data + "/meeting-transcripts", "deposit-only",
-         "a transcript is kept as recorded; correct names and errors in the meeting note"),
+         "a transcript is kept as recorded; correct names and errors in the meeting note, and list "
+         "the misheard names in the corrections block at the top of the transcript, the one change "
+         "it takes"),
         # Two examples for a notes vault; remove the # and use your own folder names:
         # (notes + "/<inbox>/_later", "never", "it is the person's staging area and is never touched"),
         # (notes + "/<agent outputs>/Archive", "existing-only",
@@ -507,6 +510,67 @@ def immutable_refusal(p, op, cfg, detail=""):
             f"nothing that exists there is changed, moved or deleted.").replace("  ", " ")
 
 
+# The one change a filed transcript takes (12 November 2026): a corrections block that tells the next
+# reader which names the speech-to-text got wrong, so the corrections travel with the file. It runs
+# from a line starting "NOTE CORRECTIONS" to the line "NOTE END CORRECTIONS", sits at the top (after
+# the WEBVTT line and its blank line in a .vtt) or at the very end, set apart by a blank line, and
+# holds no blank line and no "-->", so a .vtt stays valid: players read the block as a comment.
+CORRECTABLE_FOLDER = "meeting-transcripts"
+CORRECTIONS_START, CORRECTIONS_END = "NOTE CORRECTIONS", "NOTE END CORRECTIONS"
+
+
+def without_corrections(text):
+    """The text with its corrections block and the blank lines setting it apart taken out (the text
+    itself when it has none), or None when the block is malformed: markers unpaired or repeated, a
+    blank line or "-->" inside, or the block anywhere but the top or the very end."""
+    lines = text.replace("\r\n", "\n").split("\n")
+    starts = [i for i, s in enumerate(lines) if s.startswith(CORRECTIONS_START)]
+    ends = [i for i, s in enumerate(lines) if s.rstrip() == CORRECTIONS_END]
+    if not starts and not ends:
+        return "\n".join(lines)
+    if len(starts) != 1 or len(ends) != 1 or ends[0] < starts[0]:
+        return None
+    s, e = starts[0], ends[0]
+    if any(not ln.strip() or "-->" in ln for ln in lines[s:e + 1]):
+        return None
+    before, after = lines[:s], lines[e + 1:]
+    at_top = not before or (before[0].lstrip("﻿").startswith("WEBVTT")
+                            and all(not ln.strip() for ln in before[1:]))
+    if at_top:
+        while after and not after[0].strip():
+            after = after[1:]
+        return "\n".join(before + after)
+    if all(not ln.strip() for ln in after):
+        while before and not before[-1].strip():
+            before = before[:-1]
+        return "\n".join(before)
+    return None
+
+
+def corrections_only(tool, ti, p, cfg):
+    """True when a Write or Edit on a filed transcript leaves everything outside its corrections block
+    as it was (line endings and trailing newlines aside); False for any other folder or change."""
+    hit = immutable_hit(p, cfg)
+    if not hit or parts(hit[0])[-1] != CORRECTABLE_FOLDER or tool not in ("Write", "Edit"):
+        return False
+    try:
+        with open(p, encoding="utf-8") as fh:
+            old = fh.read()
+    except (OSError, UnicodeDecodeError):
+        return False
+    if tool == "Write":
+        new = str(ti.get("content") or "")
+    else:
+        find = str(ti.get("old_string") or "").replace("\r\n", "\n")
+        repl = str(ti.get("new_string") or "").replace("\r\n", "\n")
+        count = old.count(find) if find else 0
+        if not count or (count > 1 and not ti.get("replace_all")):
+            return False  # the Edit tool itself would fail, so there is nothing to verify
+        new = old.replace(find, repl) if ti.get("replace_all") else old.replace(find, repl, 1)
+    a, b = without_corrections(old), without_corrections(new)
+    return a is not None and b is not None and a.rstrip("\n") == b.rstrip("\n")
+
+
 def scope(p, cfg):
     if any(within(p, r) for r in cfg["writable"] + cfg["granted"]) or p in cfg["granted_files"]:
         return cfg["inside"], ""
@@ -616,6 +680,8 @@ def decide_call(tool, ti, cwd, cfg):
         refusal = immutable_refusal(p, op, cfg, (f"`{os.path.basename(p)}` exists; a" if exists else "A")
                                     + " corrected version is a new file with a date or version in its name, "
                                       "or belongs downstream.")
+        if refusal and exists and corrections_only(tool, ti, p, cfg):
+            refusal = None
         if refusal:
             return "deny", refusal
         return scope(p, cfg)
@@ -2194,6 +2260,43 @@ def _self_test(base):
     failed += _run_cases(first, cfg)
     total += len(first)
 
+    # ---- the corrections block, the one change a filed transcript takes (12 November 2026)
+    print("Part 1b: the corrections block in a transcript")
+    tr = j("data", "meeting-transcripts", "s", "2026-11-11 m - transcript.txt")
+    vt = j("data", "meeting-transcripts", "s", "2026-11-11 m - transcript.vtt")
+    done = j("data", "meeting-transcripts", "s", "2026-11-11 n - transcript.txt")
+    body = "Transcript: m\n[00:01 A] Holmbler scale is open.\n[00:05 B] So"
+    blk = ("NOTE CORRECTIONS (added after filing; the text below is unchanged)\n"
+           "Holmbler scale = Holmbladsgade (confirmed 2026-11-12)\nNOTE END CORRECTIONS\n")
+    _write(tr, body)
+    _write(vt, "WEBVTT\n\n00:00:01.000 --> 00:00:04.000\n<v A>Holmbler scale is open.\n")
+    _write(done, blk + "\n" + body)
+    Ed = lambda p, a, b: ("Edit", {"file_path": p, "old_string": a, "new_string": b})  # noqa: E731
+    corr = [
+        ("Block added at the top of a transcript", Ed(tr, "Transcript: m\n", blk + "\nTranscript: m\n"), repo, "pass"),
+        ("Block added after the WEBVTT line", Ed(vt, "WEBVTT\n\n", "WEBVTT\n\n" + blk + "\n"), repo, "pass"),
+        ("Block added at the very end", Ed(tr, "[00:05 B] So", "[00:05 B] So\n\n" + blk), repo, "pass"),
+        ("Whole transcript written again with only the block added",
+         ("Write", {"file_path": tr, "content": blk + "\n" + body}), repo, "pass"),
+        ("Block updated with one more line",
+         Ed(done, "Holmbladsgade (confirmed 2026-11-12)\n", "Holmbladsgade (confirmed 2026-11-12)\nB = Bo\n"), repo, "pass"),
+        ("A recorded line changed", Ed(tr, "Holmbler scale is open", "Holmbladsgade is open"), repo, "deny"),
+        ("A recorded line changed while adding the block",
+         Ed(tr, "Transcript: m\n[00:01 A] Holmbler", blk + "\nTranscript: m\n[00:01 A] Holmbladsgade"), repo, "deny"),
+        ("A recorded line changed next to the block",
+         Ed(done, "NOTE END CORRECTIONS\n\nTranscript: m", "NOTE END CORRECTIONS\n\nTranscript: changed"), repo, "deny"),
+        ("Block in the middle of the recording", Ed(tr, "[00:05 B] So", blk + "[00:05 B] So"), repo, "deny"),
+        ("A blank line inside the block",
+         Ed(tr, "Transcript: m\n", blk.replace("\nHolmbler", "\n\nHolmbler") + "\nTranscript: m\n"), repo, "deny"),
+        ("A cue arrow inside the block", Ed(vt, "WEBVTT\n\n", "WEBVTT\n\n" + blk.replace(" = ", " --> ") + "\n"), repo, "deny"),
+        ("A second block", Ed(done, "Transcript: m\n", blk + "\nTranscript: m\n"), repo, "deny"),
+        ("An edit whose text is not in the file", Ed(tr, "nowhere", blk), repo, "deny"),
+        ("sed on a transcript is still refused", B(f'sed -i "1i NOTE CORRECTIONS" "{tr.replace(chr(92), "/")}"'), repo, "deny"),
+        ("The block does not open raw data", Ed(orig, "x\n", blk + "\nx\n"), repo, "deny"),
+    ]
+    failed += _run_cases(corr, cfg)
+    total += len(corr)
+
     proto = [
         ("deny: exit 2, reason on stderr", {"tool_name": "Edit", "tool_input": {"file_path": orig}, "cwd": repo},
          lambda code, o, e: code == 2 and e.startswith("Refused by the guard") and not o),
@@ -2395,7 +2498,7 @@ def _self_test(base):
             else:
                 os.environ[k] = v
 
-    print(f"\n{total - failed} of {total} checks passed ({len(first) + len(proto) + 2} in part 1, {len(second)} in part 2, "
+    print(f"\n{total - failed} of {total} checks passed ({len(first) + len(proto) + 2} in part 1, {len(corr)} in part 1b, {len(second)} in part 2, "
           f"{len(third)} in part 3, {n4} in part 4)." + (" The guard's logic works on this computer." if not failed else ""))
     return 1 if failed else 0
 
