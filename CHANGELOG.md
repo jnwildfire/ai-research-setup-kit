@@ -43,6 +43,17 @@ review of v0.1.2 by Kevin Smith's Claude (points 1 to 3 accepted, point 4 taken 
   file, with the guard's unattended refusal kept as the fallback (review point 2); Claude Code's
   sandbox exists on macOS, Linux and WSL2, not on native Windows, where the guard is the substitute
   (review point 4).
+- **A change to the setup carries its dependents** (13 November 2026): a skill had been extended
+  and the question came up whether the files that name it follow by themselves. They do not. New:
+  the path-scoped rule `kit/rules/setup-changes.md` (a change is finished when everything that
+  names the changed thing agrees with it; it loads whenever the agent opens a file of the setup),
+  the script `kit/hooks/setup_refs.py` (`--who <name>` lists every line that names a thing;
+  without an argument it lists paths that do not exist, steps beyond a skill's last and skills
+  without an index row; `--self-test` plants six dead references among sound twins), a git
+  `pre-commit` hook that runs it on commits touching the setup, a check in `learn`, a row in the
+  automation map, a paragraph in guide 02. On the author's setup the first run found no dead
+  reference; three false alarms were designed out before that (a path under `$HOME`, a sentence
+  about the past, a `../` path relative to the file's own folder).
 - **Effort, in Anthropic's words** (review point 1): guide 05 and the three agents no longer say
   "the highest effort"; `medium` is Opus 5.5's default, run an effort sweep on your own evals rather
   than carrying settings over, raise for the hard case and keep what the sweep justifies.

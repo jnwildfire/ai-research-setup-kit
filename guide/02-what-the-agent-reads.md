@@ -104,6 +104,14 @@ the rules file is `AGENTS.md`, and a further `AGENTS.md` in a subfolder adds rul
 in that folder, the closer file overriding the earlier one, which plays a similar part to a
 path-scoped rule.
 
+Spreading the rules over these places has a price: the places name each other. A skill cites
+another skill's step, an index repeats a description, a script carries a folder list, and when one
+of them changes nothing updates the rest. So the kit carries one path-scoped rule about the setup
+itself, `kit/rules/setup-changes.md`, which loads whenever the agent opens a file of the setup: a
+change is finished when everything that names the changed thing agrees with it. The script
+`setup_refs.py` lists who names a thing and which references point at nothing, and a git hook can
+run it on every commit (`kit/hooks/README.md`, The reference check).
+
 ## The 200-line target
 
 Claude Code's documentation says: "target under 200 lines per CLAUDE.md file. Longer files consume

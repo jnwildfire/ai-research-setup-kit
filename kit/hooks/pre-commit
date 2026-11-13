@@ -1,0 +1,24 @@
+#!/bin/sh
+# Refuses a commit that leaves a dead reference in the setup: a path that does not exist, a
+# step beyond a skill's last, a skill without its row in skill-library.
+# Runs only when the commit touches CLAUDE.md or .claude/ (about a second, no model).
+# It checks the working tree, not the index. Rule: .claude/rules/setup-changes.md.
+# Install: copy to <project>/.githooks/pre-commit, then once per clone
+#   git config core.hooksPath .githooks
+# and keep the file LF (a .gitattributes line: .githooks/* text eol=lf).
+git diff --cached --name-only | grep -qE '^(CLAUDE\.md|\.claude/)' || exit 0
+root=$(git rev-parse --show-toplevel)
+script="$root/.claude/hooks/setup_refs.py"
+[ -f "$script" ] || script="$HOME/.claude/hooks/setup_refs.py"
+[ -f "$script" ] || exit 0
+for py in python python3 py; do
+  # on Windows a store stub may answer to "python" and run nothing: ask it to do something first
+  if "$py" -I -c "import sys" >/dev/null 2>&1; then
+    "$py" -I "$script" --root "$root" && exit 0
+    echo "pre-commit: the setup names something that is not there (list above)." >&2
+    echo "pre-commit: bring the reference in line (.claude/rules/setup-changes.md), then commit again." >&2
+    exit 1
+  fi
+done
+echo "pre-commit: no working Python found, the setup's references were not checked." >&2
+exit 0

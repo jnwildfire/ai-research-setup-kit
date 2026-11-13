@@ -48,13 +48,18 @@ drown. So each correction goes to the one place where it will fire at the right 
 
 ## Scripts
 
-None. The line count is `wc -l CLAUDE.md` (or `(Get-Content CLAUDE.md).Count` in PowerShell).
+`setup_refs.py` (who names a thing; which references are broken; `--self-test`), installed beside
+the guard. The line count is `wc -l CLAUDE.md` (or `(Get-Content CLAUDE.md).Count` in PowerShell).
 
 ## Checks
 
 - The rule says why, in one clause. A rule without its reason cannot be applied to the case it did
   not foresee.
 - The rule is not a copy of one that lives elsewhere. Two copies drift apart.
+- What names the thing the rule changed is in line with it, in the same commit: `setup_refs.py
+  --who <name>` lists the dependents, and the same script without an argument exits clean (the
+  path-scoped rule `.claude/rules/setup-changes.md` says how; `kit/hooks/README.md` describes the
+  script).
 - A rule written as a prohibition ("never X") is rewritten as the judgement behind it, unless it is
   truly mechanical, in which case it belongs in a hook.
 - If the correction was about a classification or a check that came out negative, test that the new

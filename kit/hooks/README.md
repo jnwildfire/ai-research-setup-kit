@@ -4,6 +4,8 @@
 command and every read of the agent, and that can refuse the action. Guide 04 explains why it
 exists and what it does; this page says how to install and test it. `output_check.py` is the second
 script here: not a hook, but a check the agent runs on a finished note before it reports.
+`setup_refs.py` is the third: it keeps the setup's own files in step with each other, and a git
+hook can run it on every commit ([The reference check](#the-reference-check), at the end).
 
 | File | What it is |
 |---|---|
@@ -11,6 +13,8 @@ script here: not a hook, but a check the agent runs on a finished note before it
 | `settings.example.json` | the lines that register the hook with Claude Code, to merge into your settings file. |
 | `write-scope.example.json` | the shape of a grant: the extra folders an approved plan lets one job or one session write to, and the files it may read in a blocked folder. |
 | `output_check.py` | the writing check: dashes inside sentences, abbreviations used before their long form, bare issue numbers, frontmatter that does not parse. |
+| `setup_refs.py` | the reference check: who names a thing in the setup, and which references point at nothing. |
+| `pre-commit` | a git hook that runs the reference check on every commit that touches the setup. |
 
 ## What the guard decides
 
@@ -143,3 +147,43 @@ end in a note or a document (a session's closing step, a review before something
 rule is checked rather than remembered. It reads frontmatter with PyYAML when that is installed and
 falls back to a structural check otherwise; the add-on list `COMMON` at the top holds the
 abbreviations it never asks about.
+
+## The reference check
+
+A setup is one system written down in many files. A skill names another skill's step, a script's
+flag, a folder; an index repeats each skill's description; a script carries a folder list. When
+one of these changes, nothing updates the files that name it, and a file that still describes the
+old state is followed as confidently as a correct one. The rule is in `kit/rules/setup-changes.md`
+(a path-scoped rule, so the agent reads it whenever it opens a file of the setup): a change is
+finished when everything that names the changed thing agrees with it. `setup_refs.py` is the tool
+for that, run inside the project:
+
+    python -I ~/.claude/hooks/setup_refs.py --who <name> [<name> ...]
+    python -I ~/.claude/hooks/setup_refs.py
+    python -I ~/.claude/hooks/setup_refs.py --self-test
+
+`--who` lists every line of the setup that names a thing (the rules file, everything under
+`.claude/`, your user-level rules file and skills): these are the files to read after a change.
+Without an argument it lists what a script can prove wrong: a `.claude/...` path that does not
+exist, a "step 7" of a skill whose procedure ends at 5, a project skill the `skill-library` index
+does not name, an index row without a skill. Exit code 0 when clean, 1 with findings. It never
+writes. It cannot see a description that no longer fits; `--who` and a reader are for that.
+
+On a fresh install it lists the reference files the rules file routes to and you have not written
+yet (`.claude/context/delegation.md`, `.claude/rules-changelog.md` and kin). Write them, or take
+the rows out of the routing table: a route to a file that is not there is the first dead reference.
+
+**Install.** Copy `setup_refs.py` to `~/.claude/hooks/` beside the guard, and
+`kit/rules/setup-changes.md` to `<workspace>/.claude/rules/`. Add the check to the Checks of the
+skills that change the setup or close a session (`learn` carries it already).
+
+**The git hook, if you want the check to act whatever the agent decides.** Copy `pre-commit` to
+`<workspace>/.githooks/pre-commit` and run once per clone:
+
+    git config core.hooksPath .githooks
+
+It refuses a commit that touches `CLAUDE.md` or `.claude/` while a reference is dead, prints the
+list, and lets every other commit through untouched. Without a working Python it warns and lets
+the commit through. Keep the file's line endings LF (on Windows, a `.gitattributes` line
+`.githooks/* text eol=lf`): with CRLF the shell refuses to run it. Add a row for it to your
+automation map, since it runs without a session asking for it.
