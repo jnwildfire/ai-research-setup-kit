@@ -95,7 +95,8 @@ any other agent, check its documentation; this table is a map, not a promise.
 | [kit/skills/workflow-health/](kit/skills/workflow-health/SKILL.md) | A weekly measurement of the sessions and the vault without a model, and the judgement on top when you ask. |
 | [kit/skills/dictionary/](kit/skills/dictionary/SKILL.md) | A dictation dictionary in one note, exported to Wispr Flow and to term lists. The worked example of a skill in eight layers. |
 | [kit/skills/keep-awake/](kit/skills/keep-awake/README.md) | Keeps the computer awake through a long job, also with the lid closed, and pauses the job on battery at 20 %. Windows script, macOS note. |
-| [kit/hooks/](kit/hooks/README.md) | `guard.py`, the guard on originals, the write scope, the read block, git and the battery pause, with a self-test, and the settings to register it; `output_check.py`, the writing check. |
+| [kit/hooks/](kit/hooks/README.md) | `guard.py`, the guard on originals, the write scope, the read block, git and the battery pause, with a self-test, and the settings to register it; `output_check.py`, the writing check; `setup_refs.py`, which lists who names a thing in the setup and which references point at nothing, and a git hook that runs it on every commit. |
+| [kit/rules/setup-changes.md](kit/rules/setup-changes.md) | A path-scoped rule, loaded whenever the agent opens a file of the setup: a change is finished when everything that names the changed thing agrees with it. |
 | [kit/context/automation-map.md](kit/context/automation-map.md) | The table of everything that runs without a session asking for it, and what depends on each. |
 | [kit/agents/](kit/agents/) | Three executor agents, routed by kind of work: standard, hard, and deep research. |
 | [kit/templates/](kit/templates/) | A meeting note with a decisions table, a literature card with a `read:` field, a daily note, a one-screen handover note. |
